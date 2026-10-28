@@ -36,6 +36,7 @@ import {
   Compass,
   Info,
   UserCheck,
+  Smartphone,
 } from 'lucide-react';
 import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
 
@@ -489,10 +490,10 @@ export default function HomePage() {
           {/* Mobile Menu (Dropdown) */}
           <div
             className={`overflow-hidden transition-all duration-300 md:hidden ${
-              isMenuOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
+              isMenuOpen ? 'max-h-[26rem] opacity-100' : 'max-h-0 opacity-0'
             }`}
           >
-            <div className="flex flex-col items-center gap-4 border-t border-white/5 pt-4 pb-6 text-[10px] font-black tracking-[0.2em] text-slate-300 uppercase">
+            <div className="flex flex-col items-center gap-3.5 border-t border-white/5 pt-4 pb-6 text-[10px] font-black tracking-[0.2em] text-slate-300 uppercase">
               <a href="#jadwal" onClick={() => setIsMenuOpen(false)} className="py-1.5 transition-colors hover:text-white">
                 Jadwal Shalat
               </a>
@@ -508,12 +509,26 @@ export default function HomePage() {
               <a href="#saran" onClick={() => setIsMenuOpen(false)} className="py-1.5 transition-colors text-emerald-300 hover:text-white">
                 Kotak Saran
               </a>
+
+              {/* Unduh Aplikasi Android APK khusus Mobile */}
+              <Link
+                href="/unduh"
+                onClick={() => setIsMenuOpen(false)}
+                className="w-full max-w-xs mt-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-[#0d8a5e] text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 border border-emerald-400/40 text-[11px] tracking-normal capitalize"
+              >
+                <Smartphone size={15} />
+                <span>Unduh Aplikasi APK</span>
+                <span className="rounded bg-amber-400/90 px-1.5 py-0.5 text-[9px] font-black text-amber-950 uppercase">
+                  Android
+                </span>
+              </Link>
+
               <Link
                 href="/login"
                 onClick={() => setIsMenuOpen(false)}
-                className="py-1.5 text-emerald-400 font-bold flex items-center gap-1.5"
+                className="py-1 text-slate-300 hover:text-emerald-300 font-bold flex items-center gap-1.5 tracking-normal text-[11px] capitalize"
               >
-                <Shield size={14} /> Masuk Portal Pengurus
+                <Shield size={14} className="text-emerald-400" /> Masuk Portal Pengurus
               </Link>
             </div>
           </div>
@@ -521,7 +536,7 @@ export default function HomePage() {
       </header>
 
       {/* --- HERO SECTION --- */}
-      <section className="relative flex min-h-[85vh] lg:min-h-[92vh] xl:min-h-screen items-center px-4 md:px-8 overflow-hidden">
+      <section data-theme="dark" className="relative flex min-h-[85vh] lg:min-h-[92vh] xl:min-h-screen items-center px-4 md:px-8 overflow-hidden">
         {/* Video Background */}
         <video
           autoPlay
@@ -1451,7 +1466,7 @@ export default function HomePage() {
 
         {/* --- 5. KOTAK SARAN & ASPIRASI JAMAAH --- */}
         <section id="saran" className="scroll-mt-40 md:scroll-mt-48">
-          <div className="rounded-[2.5rem] md:rounded-[3rem] bg-gradient-to-br from-[#0a1f18] via-[#0f2e24] to-[#164436] p-6 sm:p-10 md:p-14 text-white shadow-2xl border border-emerald-900/60 relative overflow-hidden">
+          <div data-theme="dark" className="rounded-[2.5rem] md:rounded-[3rem] bg-gradient-to-br from-[#0a1f18] via-[#0f2e24] to-[#164436] p-6 sm:p-10 md:p-14 text-white shadow-2xl border border-emerald-900/60 relative overflow-hidden">
             {/* Background pattern decor */}
             <div className="absolute inset-0 opacity-5 pointer-events-none bg-[radial-gradient(#d4af37_1px,transparent_1px)] [background-size:20px_20px]" />
             <div className="pointer-events-none absolute -bottom-10 -right-10 opacity-10">
@@ -1717,15 +1732,25 @@ export default function HomePage() {
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-6 py-3 text-xs font-bold text-slate-600 transition-all hover:border-[#0d8a5e] hover:bg-[#0d8a5e] hover:text-white"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-5 py-3 text-xs font-bold text-slate-600 transition-all hover:border-[#0d8a5e] hover:bg-[#0d8a5e] hover:text-white shadow-2xs"
                 >
-                  <Shield size={16} /> Portal Pengurus Masjid
+                  <Shield size={16} /> Portal Pengurus
                 </Link>
                 <Link
                   href="/saran"
-                  className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-6 py-3 text-xs font-bold text-emerald-800 transition-all hover:bg-emerald-600 hover:text-white"
+                  className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-5 py-3 text-xs font-bold text-emerald-800 transition-all hover:bg-emerald-600 hover:text-white shadow-2xs"
                 >
-                  <MessageSquareHeart size={16} /> Kotak Saran & Aspirasi
+                  <MessageSquareHeart size={16} /> Kotak Saran
+                </Link>
+                <Link
+                  href="/unduh"
+                  className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-gradient-to-r from-[#0a1f18] to-emerald-900 px-5 py-3 text-xs font-bold text-white shadow-md transition-all hover:from-emerald-700 hover:to-teal-600 hover:scale-105 active:scale-95"
+                >
+                  <Smartphone size={16} className="text-emerald-300" />
+                  <span>Unduh Aplikasi APK</span>
+                  <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black text-amber-950 uppercase">
+                    Android
+                  </span>
                 </Link>
               </div>
             </div>
