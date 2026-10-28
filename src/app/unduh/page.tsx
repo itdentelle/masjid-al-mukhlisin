@@ -28,7 +28,7 @@ export default function UnduhApkPage() {
   const [copied, setCopied] = useState(false);
 
   // Direct download link ke file APK yang sudah di-build
-  const apkDownloadUrl = '/downloads/masjid-al-mukhlisin.apk';
+  const apkDownloadUrl = '/downloads/al-mukhlisin.apk';
 
   const handleShare = async () => {
     if (typeof window !== 'undefined' && navigator.share) {
@@ -160,7 +160,7 @@ export default function UnduhApkPage() {
               <div className="mt-6">
                 <a
                   href={apkDownloadUrl}
-                  download="masjid-al-mukhlisin.apk"
+                  download="al-mukhlisin.apk"
                   className="w-full inline-flex items-center justify-center gap-2.5 py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold text-sm shadow-xl shadow-emerald-950/50 border border-emerald-300/40 transition-all hover:scale-[1.01] active:scale-95"
                 >
                   <Download size={18} />

@@ -9,7 +9,8 @@
     "lint": "eslint",
     "cap:build": "next build && cap sync android",
     "cap:sync": "cap sync android",
-    "cap:open": "cap open android"
+    "cap:open": "cap open android",
+    "build:apk": "node scripts/build-apk.js"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",

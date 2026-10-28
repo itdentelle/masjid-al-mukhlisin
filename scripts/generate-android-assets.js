@@ -131,6 +131,25 @@ async function generateAssets() {
     console.log(`Generated splash for ${splash.dir} (${splash.w}x${splash.h})`);
   }
 
+  console.log('--- Generating Android 12 Splash Icon ---');
+  const splashIconSize = 432;
+  const splashCircleSvg = Buffer.from(
+    `<svg width="${splashIconSize}" height="${splashIconSize}"><circle cx="${splashIconSize/2}" cy="${splashIconSize/2}" r="${splashIconSize/2 - 2}" fill="white"/></svg>`
+  );
+  await sharp(iconSrcPath)
+    .resize(splashIconSize, splashIconSize)
+    .composite([{ input: splashCircleSvg, blend: 'dest-in' }])
+    .png()
+    .toFile(path.join(resDir, 'drawable/splash_icon.png'));
+  console.log('Generated drawable/splash_icon.png for Android 12');
+
+  // Clean old Ionic/Capacitor robot vector in drawable-v24
+  const oldRobotPath = path.join(resDir, 'drawable-v24/ic_launcher_foreground.xml');
+  if (fs.existsSync(oldRobotPath)) {
+    fs.unlinkSync(oldRobotPath);
+    console.log('Removed obsolete drawable-v24/ic_launcher_foreground.xml');
+  }
+
   console.log('--- Updating Web Icon / Favicon ---');
   // Also create a 192x192 & 512x512 PWA/web icon in public
   await sharp(iconSrcPath)

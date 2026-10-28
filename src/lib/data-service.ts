@@ -31,50 +31,10 @@ const INITIAL_ZAKAT_QURBAN: ZakatQurbanItem[] = [];
 const INITIAL_INVENTORY: InventoryItem[] = [];
 const INITIAL_WAKAF: WakafItem[] = [];
 const INITIAL_KHUTBAH: KhutbahItem[] = [];
-const INITIAL_SARAN_KRITIK: SaranKritikItem[] = [
-  {
-    id: 1,
-    nama: 'Haji Hendra Kusuma',
-    no_hp: '081234567890',
-    kategori: 'Fasilitas & Kebersihan',
-    pesan: 'Mohon agar kran tempat wudhu bagian selatan diperbaiki karena ada dua kran yang debit airnya kecil saat jam shalat Jumat.',
-    status: 'selesai',
-    tanggapan_dkm: 'Alhamdulillah, terima kasih atas sarannya Pak Haji Hendra. Tim sarpras DKM telah mengganti sil kran dan pipa saluran wudhu kemarin sore. Saat ini debit air sudah kembali lancar dan normal.',
-    ditanggapi_oleh: 'H. Mulyadi, S.E. (Sarpras DKM)',
-    ditanggapi_pada: '2026-10-25T14:30:00.000Z',
-    is_publik: true,
-    created_at: '2026-10-24T08:15:00.000Z',
-  },
-  {
-    id: 2,
-    nama: 'Hamba Allah',
-    kategori: 'Kajian & Dakwah',
-    pesan: 'Apakah bisa diadakan kajian rutin khusus fiqih muamalah kontemporer atau parenting islami untuk remaja dan pemuda masjid di malam minggu?',
-    status: 'ditindaklanjuti',
-    tanggapan_dkm: 'Jazakallahu khairan atas usulan yang sangat baik. Agenda kajian pemuda sedang kami godok bersama Remaja Masjid (IRMA) dan insyaAllah akan dimulai bulan depan dengan mengundang asatidz tamu.',
-    ditanggapi_oleh: 'Ustadz H. Ahmad Sobari (Ketua DKM)',
-    ditanggapi_pada: '2026-10-25T19:00:00.000Z',
-    is_publik: true,
-    created_at: '2026-10-24T16:20:00.000Z',
-  },
-  {
-    id: 3,
-    nama: 'Ibu Siti Rahmawati',
-    no_hp: '085712349988',
-    kategori: 'Fasilitas & Kebersihan',
-    pesan: 'Untuk area shalat akhwat / jamaah wanita di lantai 2, mohon ditambah beberapa mukena bersih cadangan dan pewangi ruangan.',
-    status: 'selesai',
-    tanggapan_dkm: 'Terima kasih atas masukannya Bu Siti. Divisi Muslimah DKM sudah mencuci dan menambahkan 10 set mukena baru serta memasang diffuser aromaterapi di shaf wanita.',
-    ditanggapi_oleh: 'Divisi Keputrian DKM',
-    ditanggapi_pada: '2026-10-25T11:20:00.000Z',
-    is_publik: true,
-    created_at: '2026-10-23T10:00:00.000Z',
-  },
-];
-
+const INITIAL_SARAN_KRITIK: SaranKritikItem[] = [];
 
 // Helper local storage & Auto-purge cache lama agar mulai bersih dari 0
-const STORAGE_DATA_VERSION = 'v2_clean_zero_production';
+const STORAGE_DATA_VERSION = 'v3_offline_cache_no_dummy';
 
 function checkAndPurgeLegacyData(): void {
   if (typeof window === 'undefined') return;
@@ -88,6 +48,7 @@ function checkAndPurgeLegacyData(): void {
       localStorage.removeItem('masjid_zakat_qurban_data');
       localStorage.removeItem('masjid_wakaf_data');
       localStorage.removeItem('masjid_petugas_jumat_data');
+      localStorage.removeItem('masjid_saran_data');
       localStorage.setItem('masjid_data_version', STORAGE_DATA_VERSION);
     }
   } catch (err) {
@@ -137,7 +98,9 @@ export const DataService = {
           .eq('id', 1)
           .maybeSingle();
         if (!error && data) {
-          return { ...stored, ...(data as IdentitasMasjid) };
+          const merged = { ...stored, ...(data as IdentitasMasjid) };
+          setStored('masjid_identitas_data', merged);
+          return merged;
         }
       } catch (err) {
         console.warn('Supabase getIdentitas error:', err);
@@ -177,11 +140,18 @@ export const DataService = {
   // ==========================================
   async getKas(): Promise<KasItem[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('kas')
-        .select('*')
-        .order('tanggal', { ascending: false });
-      if (!error && data) return data as KasItem[];
+      try {
+        const { data, error } = await supabase
+          .from('kas')
+          .select('*')
+          .order('tanggal', { ascending: false });
+        if (!error && data) {
+          setStored('masjid_kas_data', data);
+          return data as KasItem[];
+        }
+      } catch (err) {
+        console.warn('Supabase getKas offline:', err);
+      }
     }
     return getStored<KasItem[]>('masjid_kas_data', INITIAL_KAS);
   },
@@ -238,11 +208,18 @@ export const DataService = {
   // ==========================================
   async getJamaah(): Promise<JamaahItem[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('jamaah')
-        .select('*')
-        .order('nama', { ascending: true });
-      if (!error && data) return data as JamaahItem[];
+      try {
+        const { data, error } = await supabase
+          .from('jamaah')
+          .select('*')
+          .order('nama', { ascending: true });
+        if (!error && data) {
+          setStored('masjid_jamaah_data', data);
+          return data as JamaahItem[];
+        }
+      } catch (err) {
+        console.warn('Supabase getJamaah offline:', err);
+      }
     }
     return getStored<JamaahItem[]>('masjid_jamaah_data', INITIAL_JAMAAH);
   },
@@ -299,11 +276,18 @@ export const DataService = {
   // ==========================================
   async getPetugasJumat(): Promise<PetugasJumatItem[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('petugas_jumat')
-        .select('*')
-        .order('tanggal', { ascending: false });
-      if (!error && data) return data as PetugasJumatItem[];
+      try {
+        const { data, error } = await supabase
+          .from('petugas_jumat')
+          .select('*')
+          .order('tanggal', { ascending: false });
+        if (!error && data) {
+          setStored('masjid_petugas_jumat_data', data);
+          return data as PetugasJumatItem[];
+        }
+      } catch (err) {
+        console.warn('Supabase getPetugasJumat offline:', err);
+      }
     }
     return getStored<PetugasJumatItem[]>('masjid_petugas_jumat_data', INITIAL_PETUGAS_JUMAT);
   },
@@ -360,11 +344,18 @@ export const DataService = {
   // ==========================================
   async getZakatQurban(): Promise<ZakatQurbanItem[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('zakat_qurban')
-        .select('*')
-        .order('tanggal', { ascending: false });
-      if (!error && data) return data as ZakatQurbanItem[];
+      try {
+        const { data, error } = await supabase
+          .from('zakat_qurban')
+          .select('*')
+          .order('tanggal', { ascending: false });
+        if (!error && data) {
+          setStored('masjid_zakat_qurban_data', data);
+          return data as ZakatQurbanItem[];
+        }
+      } catch (err) {
+        console.warn('Supabase getZakatQurban offline:', err);
+      }
     }
     return getStored<ZakatQurbanItem[]>('masjid_zakat_qurban_data', INITIAL_ZAKAT_QURBAN);
   },
@@ -421,11 +412,18 @@ export const DataService = {
   // ==========================================
   async getInventories(): Promise<InventoryItem[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('inventories')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (!error && data) return data as InventoryItem[];
+      try {
+        const { data, error } = await supabase
+          .from('inventories')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && data) {
+          setStored('masjid_inventory_data', data);
+          return data as InventoryItem[];
+        }
+      } catch (err) {
+        console.warn('Supabase getInventories offline:', err);
+      }
     }
     return getStored<InventoryItem[]>('masjid_inventory_data', INITIAL_INVENTORY);
   },
@@ -482,11 +480,18 @@ export const DataService = {
   // ==========================================
   async getWakaf(): Promise<WakafItem[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('wakaf')
-        .select('*')
-        .order('tanggal', { ascending: false });
-      if (!error && data) return data as WakafItem[];
+      try {
+        const { data, error } = await supabase
+          .from('wakaf')
+          .select('*')
+          .order('tanggal', { ascending: false });
+        if (!error && data) {
+          setStored('masjid_wakaf_data', data);
+          return data as WakafItem[];
+        }
+      } catch (err) {
+        console.warn('Supabase getWakaf offline:', err);
+      }
     }
     return getStored<WakafItem[]>('masjid_wakaf_data', INITIAL_WAKAF);
   },
@@ -543,31 +548,21 @@ export const DataService = {
   // ==========================================
   async getKhutbahs(): Promise<KhutbahItem[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('khutbahs')
-        .select('*')
-        .order('tanggal', { ascending: true });
-      if (!error && data) return data as KhutbahItem[];
+      try {
+        const { data, error } = await supabase
+          .from('khutbahs')
+          .select('*')
+          .order('tanggal', { ascending: true });
+        if (!error && data) {
+          setStored('masjid_khutbah_data', data);
+          return data as KhutbahItem[];
+        }
+      } catch (err) {
+        console.warn('Supabase getKhutbahs offline:', err);
+      }
     }
     const rawItems = getStored<KhutbahItem[]>('masjid_khutbah_data', INITIAL_KHUTBAH);
-    // Jika tidak ada gambar kustom atau link placeholder/unsplash, set image = null agar poster otomatis ter-generate
-    const sanitized = rawItems.map((item) => {
-      const isCustomImage =
-        Boolean(item.image) &&
-        !item.image!.includes('unsplash.com') &&
-        !item.image!.includes('default-khutbah') &&
-        !item.image!.startsWith('/images/') &&
-        (item.image!.startsWith('data:image') ||
-          item.image!.includes('supabase.co') ||
-          item.image!.includes('supabase.in') ||
-          item.image!.includes('khutbah-images'));
-      return {
-        ...item,
-        image: isCustomImage ? item.image : null,
-      };
-    });
-    setStored('masjid_khutbah_data', sanitized);
-    return sanitized;
+    return rawItems;
   },
 
   async uploadKhutbahImage(file: File): Promise<string> {
@@ -740,7 +735,10 @@ export const DataService = {
           query = query.eq('is_publik', true);
         }
         const { data, error } = await query;
-        if (!error && data) return data as SaranKritikItem[];
+        if (!error && data) {
+          setStored('masjid_saran_data', data);
+          return data as SaranKritikItem[];
+        }
       } catch (err) {
         console.warn('Supabase getSaranKritik error:', err);
       }
