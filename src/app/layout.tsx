@@ -8,11 +8,12 @@ export const metadata: Metadata = {
     'Sistem Informasi dan Manajemen Masjid Al-Mukhlisin. Transparansi kas umat, jadwal kajian & khutbah, serta manajemen inventaris terpadu.',
   icons: {
     icon: [
+      { url: '/icon.png', type: 'image/png' },
       { url: '/icon.svg', type: 'image/svg+xml' },
       { url: '/favicon.ico' },
     ],
-    shortcut: '/icon.svg',
-    apple: '/icon.svg',
+    shortcut: '/icon.png',
+    apple: '/apple-touch-icon.png',
   },
 };
 
