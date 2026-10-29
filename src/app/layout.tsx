@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   },
 };
 
+import AnimatedSplashScreen from '@/components/layout/animated-splash-screen';
+
 export default function RootLayout({
   children,
 }: {
@@ -29,6 +31,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="min-h-screen bg-[#f8fafc] text-slate-900 antialiased selection:bg-emerald-200">
+        <AnimatedSplashScreen />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

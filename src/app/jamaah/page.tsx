@@ -11,7 +11,6 @@ import {
   MapPin,
   Heart,
   Award,
-  Sparkles,
   Download,
   Printer,
   X,
@@ -194,7 +193,6 @@ export default function JamaahPublicPage() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-900/60 px-3.5 py-1 text-[10px] font-black tracking-widest text-emerald-300 uppercase">
-                <Sparkles size={12} />
                 <span>KEPENGURUSAN & WARGA JAMAAH · MASJID AL-MUKHLISIN</span>
               </div>
               <h1 className="font-serif-elegant text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white">

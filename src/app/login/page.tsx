@@ -74,7 +74,7 @@ export default function LoginPage() {
             {identitas?.nama || 'Al-Mukhlisin'}
           </h2>
           <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase mt-1">
-            Pusat Komando Administrator
+            Portal Pengurus DKM
           </p>
           <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-semibold border border-emerald-100">
             <span className="font-mono font-bold">ID {identitas?.nomor_id_kemenag || '01.4.13.04.06.000158'}</span>

@@ -1,13 +1,14 @@
 'use client';
 
 import React from 'react';
-import { CalendarDays, MapPin } from 'lucide-react';
+import { CalendarDays, MapPin, Clock } from 'lucide-react';
 
 export interface KhutbahDefaultPosterProps {
   jenisKegiatan?: string;
   khotib?: string;
   tema?: string | null;
   tanggal?: string;
+  waktu?: string | null;
   variant?: 'thumbnail' | 'preview' | 'card' | 'banner';
   className?: string;
 }
@@ -68,6 +69,7 @@ export default function KhutbahDefaultPoster({
   khotib = 'Nama Khotib / Penceramah',
   tema = '',
   tanggal,
+  waktu,
   variant = 'card',
   className = '',
 }: KhutbahDefaultPosterProps) {
@@ -138,9 +140,17 @@ export default function KhutbahDefaultPoster({
 
         {/* Bottom Footer Info */}
         <div className="relative z-10 flex items-center justify-between text-[9px] text-emerald-200/80 border-t border-emerald-500/20 pt-2">
-          <div className="flex items-center gap-1">
-            <CalendarDays size={11} className="text-amber-300" />
-            <span className="font-bold">{tanggal || 'Tanggal Pelaksanaan'}</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <CalendarDays size={11} className="text-amber-300" />
+              <span className="font-bold">{tanggal || 'Tanggal Pelaksanaan'}</span>
+            </div>
+            {waktu && (
+              <div className="flex items-center gap-1 text-emerald-200">
+                <Clock size={10} className="text-amber-300" />
+                <span className="font-mono font-bold">{waktu} WIB</span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1 text-[8px] text-emerald-300/90">
             <MapPin size={9} className="text-emerald-400" />
@@ -211,9 +221,17 @@ export default function KhutbahDefaultPoster({
 
         {/* Bottom Bar */}
         <div className="relative z-10 flex items-center justify-between text-[10px] text-emerald-200/80 border-t border-emerald-500/20 pt-3">
-          <div className="flex items-center gap-1.5">
-            <CalendarDays size={13} className="text-amber-300" />
-            <span className="font-bold">{tanggal || 'Jadwal Terdaftar'}</span>
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1.5">
+              <CalendarDays size={13} className="text-amber-300" />
+              <span className="font-bold">{tanggal || 'Jadwal Terdaftar'}</span>
+            </div>
+            {waktu && (
+              <div className="flex items-center gap-1 text-emerald-200">
+                <Clock size={12} className="text-amber-300" />
+                <span className="font-mono font-bold">{waktu} WIB</span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1 text-[9px] text-emerald-300">
             <MapPin size={11} className="text-emerald-400" />
@@ -278,9 +296,17 @@ export default function KhutbahDefaultPoster({
 
       {/* Bottom Footer */}
       <div className="relative z-10 flex items-center justify-between text-[8px] sm:text-[9px] text-emerald-200/80 border-t border-emerald-500/20 pt-1.5 sm:pt-2.5">
-        <div className="flex items-center gap-1">
-          <CalendarDays size={10} className="text-amber-300 shrink-0" />
-          <span className="font-bold truncate max-w-[120px] sm:max-w-none">{tanggal || 'Jadwal Kajian'}</span>
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
+            <CalendarDays size={10} className="text-amber-300 shrink-0" />
+            <span className="font-bold truncate max-w-[100px] sm:max-w-none">{tanggal || 'Jadwal Kajian'}</span>
+          </div>
+          {waktu && (
+            <div className="flex items-center gap-0.5 text-emerald-200">
+              <Clock size={9} className="text-amber-300 shrink-0" />
+              <span className="font-mono font-bold">{waktu} WIB</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-1 text-[7px] sm:text-[8px] text-emerald-300/90 whitespace-nowrap">
           <MapPin size={8} className="text-emerald-400 shrink-0" />

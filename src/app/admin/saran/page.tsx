@@ -8,7 +8,6 @@ import {
   X,
   Phone,
   MessageCircle,
-  Sparkles,
   RefreshCw,
   CheckCircle,
   Clock,
@@ -24,11 +23,22 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import AdminLayout from '@/components/layout/admin-layout';
+import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 import { DataService } from '@/lib/data-service';
-import { SaranKritikItem, KategoriSaran, StatusSaran } from '@/types';
+import { SaranKritikItem, KategoriSaran, StatusSaran, KategoriItem } from '@/types';
+
+const DEFAULT_SARAN_CATEGORIES = [
+  'Umum',
+  'Fasilitas & Kebersihan',
+  'Kajian & Dakwah',
+  'Pelayanan DKM',
+  'Keuangan',
+  'Lainnya',
+];
 
 export default function AdminSaranPage() {
   const [saranList, setSaranList] = useState<SaranKritikItem[]>([]);
+  const [kategoriSaran, setKategoriSaran] = useState<KategoriItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
@@ -52,8 +62,13 @@ export default function AdminSaranPage() {
     setLoading(true);
     try {
       if (typeof DataService?.getSaranKritik === 'function') {
-        const items = await DataService.getSaranKritik();
+        const [items, categories] = await Promise.all([
+          DataService.getSaranKritik(),
+          DataService.getKategori('saran'),
+        ]);
         setSaranList(Array.isArray(items) ? items : []);
+        const activeCats = categories.filter((k) => k.is_active !== false);
+        if (activeCats.length > 0) setKategoriSaran(activeCats);
       }
     } catch (err) {
       console.error('Failed to load saran list:', err);
@@ -65,14 +80,40 @@ export default function AdminSaranPage() {
   useEffect(() => {
     loadData();
 
+    const handleKategoriUpdate = () => {
+      DataService.getKategori('saran').then((cats) => {
+        const activeCats = cats.filter((k) => k.is_active !== false);
+        if (activeCats.length > 0) setKategoriSaran(activeCats);
+      });
+    };
+
     const handleSaranUpdated = () => {
       loadData();
     };
+    window.addEventListener('masjid_kategori_updated', handleKategoriUpdate);
     window.addEventListener('masjid_saran_updated', handleSaranUpdated);
     return () => {
+      window.removeEventListener('masjid_kategori_updated', handleKategoriUpdate);
       window.removeEventListener('masjid_saran_updated', handleSaranUpdated);
     };
   }, []);
+
+  const saranOptions = useMemo(() => {
+    if (kategoriSaran.length > 0) {
+      return kategoriSaran.map((k) => k.nama);
+    }
+    return DEFAULT_SARAN_CATEGORIES;
+  }, [kategoriSaran]);
+
+  const dropdownFilterKategoriOptions: DropdownOption[] = useMemo(() => {
+    return [
+      { value: 'all', label: 'Semua Kategori' },
+      ...saranOptions.map((opt) => ({
+        value: opt,
+        label: opt,
+      })),
+    ];
+  }, [saranOptions]);
 
   const openEditModal = (item: SaranKritikItem) => {
     setSelectedItem(item);
@@ -163,6 +204,14 @@ export default function AdminSaranPage() {
     return { total, baru, ditindaklanjuti, selesai };
   }, [saranList]);
 
+  const dropdownFilterStatusOptions: DropdownOption[] = useMemo(() => [
+    { value: 'all', label: 'Semua Status' },
+    { value: 'baru', label: `Belum Ditanggapi (${stats.baru})` },
+    { value: 'ditinjau', label: 'Sedang Ditinjau' },
+    { value: 'ditindaklanjuti', label: 'Sedang Ditindaklanjuti' },
+    { value: 'selesai', label: 'Selesai' },
+  ], [stats.baru]);
+
   // Export to Excel
   const handleExportExcel = () => {
     if (saranList.length === 0) {
@@ -185,10 +234,10 @@ export default function AdminSaranPage() {
         s.status === 'baru'
           ? 'Belum Ditanggapi'
           : s.status === 'ditinjau'
-          ? 'Ditinjau'
-          : s.status === 'ditindaklanjuti'
-          ? 'Sedang Ditindaklanjuti'
-          : 'Selesai',
+            ? 'Ditinjau'
+            : s.status === 'ditindaklanjuti'
+              ? 'Sedang Ditindaklanjuti'
+              : 'Selesai',
       'Tanggapan Resmi DKM': s.tanggapan_dkm || 'Belum ada tanggapan',
       'Penjawab DKM': s.ditanggapi_oleh || '-',
       'Tanggal Tanggapan': s.ditanggapi_pada
@@ -239,34 +288,34 @@ export default function AdminSaranPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 max-w-7xl mx-auto pb-16">
+      <div className="p-3.5 sm:p-6 md:p-8 space-y-4 sm:space-y-6 max-w-7xl mx-auto pb-24">
         {/* Header Title & Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs">
           <div>
-            <div className="flex items-center gap-2.5 mb-1.5">
-              <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100">
-                <MessageSquareHeart size={24} />
+            <div className="flex items-center gap-2 sm:gap-2.5 mb-1 sm:mb-1.5">
+              <div className="p-2 sm:p-2.5 bg-emerald-50 text-emerald-700 rounded-xl sm:rounded-2xl border border-emerald-100">
+                <MessageSquareHeart size={22} className="sm:size-[24px]" />
               </div>
-              <h1 className="font-serif-elegant text-2xl md:text-3xl font-bold text-slate-900">
+              <h1 className="font-serif-elegant text-xl sm:text-2xl md:text-3xl font-bold text-slate-900">
                 Kotak Saran & Aspirasi Jamaah
               </h1>
             </div>
-            <p className="text-xs text-slate-500 max-w-2xl">
+            <p className="text-[11px] sm:text-xs text-slate-500 max-w-2xl">
               Pusat penerimaan masukan, kritik konstruktif, dan saran dari jamaah. Berikan tanggapan resmi DKM secara amanah dan solutif.
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <button
               onClick={loadData}
-              className="p-2.5 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+              className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
               title="Muat Ulang Data"
             >
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+              <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
             </button>
             <button
               onClick={handleExportExcel}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-emerald-800 text-white text-xs font-bold hover:bg-emerald-700 transition-all shadow-sm active:scale-95"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-emerald-800 text-white text-xs font-bold hover:bg-emerald-700 transition-all shadow-sm active:scale-95"
             >
               <Download size={15} />
               <span>Ekspor ke Excel</span>
@@ -275,44 +324,44 @@ export default function AdminSaranPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-            <div className="p-3 bg-slate-100 text-slate-700 rounded-2xl">
-              <MessageSquareHeart size={22} />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          <div className="bg-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-3 sm:gap-4">
+            <div className="p-2.5 sm:p-3 bg-slate-100 text-slate-700 rounded-xl sm:rounded-2xl shrink-0">
+              <MessageSquareHeart size={20} className="sm:size-[22px]" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Masukan</p>
-              <p className="text-2xl font-bold text-slate-800">{stats.total}</p>
+              <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Masukan</p>
+              <p className="text-xl sm:text-2xl font-bold text-slate-800">{stats.total}</p>
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-            <div className="p-3 bg-rose-50 text-rose-600 rounded-2xl">
-              <AlertCircle size={22} />
+          <div className="bg-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-3 sm:gap-4">
+            <div className="p-2.5 sm:p-3 bg-rose-50 text-rose-600 rounded-xl sm:rounded-2xl shrink-0">
+              <AlertCircle size={20} className="sm:size-[22px]" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-rose-500">Perlu Tanggapan</p>
-              <p className="text-2xl font-bold text-rose-600">{stats.baru}</p>
+              <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-rose-500">Perlu Tanggapan</p>
+              <p className="text-xl sm:text-2xl font-bold text-rose-600">{stats.baru}</p>
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-            <div className="p-3 bg-sky-50 text-sky-600 rounded-2xl">
-              <RefreshCw size={22} />
+          <div className="bg-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-3 sm:gap-4">
+            <div className="p-2.5 sm:p-3 bg-sky-50 text-sky-600 rounded-xl sm:rounded-2xl shrink-0">
+              <RefreshCw size={20} className="sm:size-[22px]" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Proses Tindak Lanjut</p>
-              <p className="text-2xl font-bold text-sky-700">{stats.ditindaklanjuti}</p>
+              <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-sky-600">Proses Tindak Lanjut</p>
+              <p className="text-xl sm:text-2xl font-bold text-sky-700">{stats.ditindaklanjuti}</p>
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
-              <CheckCircle2 size={22} />
+          <div className="bg-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-3 sm:gap-4">
+            <div className="p-2.5 sm:p-3 bg-emerald-50 text-emerald-600 rounded-xl sm:rounded-2xl shrink-0">
+              <CheckCircle2 size={20} className="sm:size-[22px]" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Telah Selesai</p>
-              <p className="text-2xl font-bold text-emerald-700">{stats.selesai}</p>
+              <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-emerald-600">Telah Selesai</p>
+              <p className="text-xl sm:text-2xl font-bold text-emerald-700">{stats.selesai}</p>
             </div>
           </div>
         </div>
@@ -340,31 +389,19 @@ export default function AdminSaranPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <select
+              <CustomDropdown
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-3 py-2.5 rounded-2xl border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:outline-hidden focus:border-emerald-600"
-              >
-                <option value="all">Semua Status</option>
-                <option value="baru">Belum Ditanggapi ({stats.baru})</option>
-                <option value="ditinjau">Sedang Ditinjau</option>
-                <option value="ditindaklanjuti">Sedang Ditindaklanjuti</option>
-                <option value="selesai">Selesai</option>
-              </select>
+                onChange={(val) => setFilterStatus(val)}
+                options={dropdownFilterStatusOptions}
+                className="w-full sm:w-56"
+              />
 
-              <select
+              <CustomDropdown
                 value={filterKategori}
-                onChange={(e) => setFilterKategori(e.target.value)}
-                className="px-3 py-2.5 rounded-2xl border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:outline-hidden focus:border-emerald-600"
-              >
-                <option value="all">Semua Kategori</option>
-                <option value="Umum">Umum</option>
-                <option value="Fasilitas & Kebersihan">Fasilitas & Kebersihan</option>
-                <option value="Kajian & Dakwah">Kajian & Dakwah</option>
-                <option value="Pelayanan DKM">Pelayanan DKM</option>
-                <option value="Keuangan">Keuangan</option>
-                <option value="Lainnya">Lainnya</option>
-              </select>
+                onChange={(val) => setFilterKategori(val)}
+                options={dropdownFilterKategoriOptions}
+                className="w-full sm:w-48"
+              />
             </div>
           </div>
         </div>
@@ -392,11 +429,10 @@ export default function AdminSaranPage() {
             {filteredItems.map((item) => (
               <div
                 key={item.id}
-                className={`bg-white p-5 md:p-6 rounded-3xl border transition-all ${
-                  item.status === 'baru'
+                className={`bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border transition-all ${item.status === 'baru'
                     ? 'border-rose-200 shadow-md shadow-rose-50/50 ring-1 ring-rose-100'
                     : 'border-slate-200/80 hover:border-slate-300 shadow-xs'
-                }`}
+                  }`}
               >
                 {/* Item Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
@@ -445,11 +481,10 @@ export default function AdminSaranPage() {
                     {getStatusBadge(item.status)}
                     <button
                       onClick={() => handleTogglePublik(item)}
-                      className={`p-1.5 rounded-xl border text-[11px] flex items-center gap-1 transition-colors ${
-                        item.is_publik
+                      className={`p-1.5 rounded-xl border text-[11px] flex items-center gap-1 transition-colors ${item.is_publik
                           ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                           : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100'
-                      }`}
+                        }`}
                       title={item.is_publik ? 'Tampil di Halaman Publik' : 'Disembunyikan dari Publik'}
                     >
                       {item.is_publik ? <Eye size={13} /> : <EyeOff size={13} />}
@@ -587,11 +622,10 @@ export default function AdminSaranPage() {
                         type="button"
                         key={st.val}
                         onClick={() => setStatusVal(st.val as StatusSaran)}
-                        className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
-                          statusVal === st.val
+                        className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${statusVal === st.val
                             ? 'bg-emerald-50 text-emerald-800 border-emerald-600 ring-1 ring-emerald-600'
                             : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                        }`}
+                          }`}
                       >
                         {st.label}
                       </button>

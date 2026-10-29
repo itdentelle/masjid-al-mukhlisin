@@ -18,7 +18,6 @@ import {
   Target,
   Wallet,
   X,
-  Sparkles,
   ArrowRight,
   RefreshCw,
   ExternalLink,
@@ -39,6 +38,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
+import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 
 const IconInstagram = ({ size = 18 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -61,7 +61,7 @@ const IconFacebook = ({ size = 18 }: { size?: number }) => (
   </svg>
 );
 import { DataService } from '@/lib/data-service';
-import { InventoryItem, KasItem, KhutbahItem, IdentitasMasjid, SaranKritikItem, KategoriSaran, PetugasJumatItem } from '@/types';
+import { InventoryItem, KasItem, KhutbahItem, IdentitasMasjid, SaranKritikItem, KategoriSaran, PetugasJumatItem, KategoriItem } from '@/types';
 
 function KajianCardMedia({ item }: { item: KhutbahItem }) {
   const [imgError, setImgError] = useState(false);
@@ -79,6 +79,7 @@ function KajianCardMedia({ item }: { item: KhutbahItem }) {
           day: 'numeric',
           month: 'short',
         })}
+        waktu={item.waktu}
         className="h-full w-full transition-transform duration-700 group-hover:scale-105"
       />
     );
@@ -112,6 +113,7 @@ function KajianModalMedia({ item }: { item: KhutbahItem }) {
           month: 'long',
           year: 'numeric',
         })}
+        waktu={item.waktu}
         className="h-full w-full"
       />
     );
@@ -270,6 +272,7 @@ export default function HomePage() {
 
   // Saran & Aspirasi State
   const [saranList, setSaranList] = useState<SaranKritikItem[]>([]);
+  const [kategoriSaranList, setKategoriSaranList] = useState<KategoriItem[]>([]);
   const [saranNama, setSaranNama] = useState('');
   const [saranIsAnonim, setSaranIsAnonim] = useState(false);
   const [saranNoHp, setSaranNoHp] = useState('');
@@ -277,6 +280,18 @@ export default function HomePage() {
   const [saranPesan, setSaranPesan] = useState('');
   const [saranSubmitting, setSaranSubmitting] = useState(false);
   const [saranSuccess, setSaranSuccess] = useState(false);
+
+  const saranDropdownOptions: DropdownOption[] = useMemo(() => {
+    const list =
+      kategoriSaranList.length > 0
+        ? kategoriSaranList.map((k) => k.nama)
+        : ['Umum', 'Fasilitas & Kebersihan', 'Kajian & Dakwah', 'Pelayanan DKM', 'Keuangan', 'Lainnya'];
+
+    return list.map((opt) => ({
+      value: opt,
+      label: opt,
+    }));
+  }, [kategoriSaranList]);
 
   // Carousel Slides
   const [activeSlide, setActiveSlide] = useState(0);
@@ -349,7 +364,7 @@ export default function HomePage() {
     const fetchInternalData = async () => {
       setLoading(true);
       try {
-        const [khutbahData, kasData, invData, idData, saranData, petugasData] = await Promise.all([
+        const [khutbahData, kasData, invData, idData, saranData, petugasData, categoriesData] = await Promise.all([
           DataService.getKhutbahs(),
           DataService.getKas(),
           DataService.getInventories(),
@@ -358,9 +373,14 @@ export default function HomePage() {
             ? DataService.getSaranKritik(true)
             : Promise.resolve([]),
           DataService.getPetugasJumat(),
+          DataService.getKategori('saran'),
         ]);
 
         if (idData) setIdentitas(idData);
+        if (Array.isArray(categoriesData)) {
+          const activeCats = categoriesData.filter((k) => k.is_active !== false);
+          if (activeCats.length > 0) setKategoriSaranList(activeCats);
+        }
 
         // 1. Khutbah: Urutkan terdekat dan ambil 3 teratas
         setJadwal(khutbahData.slice(0, 3));
@@ -401,8 +421,16 @@ export default function HomePage() {
       }
     };
 
+    const handleKategoriUpdated = () => {
+      DataService.getKategori('saran').then((cats) => {
+        const activeCats = cats.filter((k) => k.is_active !== false);
+        if (activeCats.length > 0) setKategoriSaranList(activeCats);
+      });
+    };
+
     window.addEventListener('masjid_identitas_updated', handleIdentitasUpdated);
     window.addEventListener('masjid_saran_updated', handleSaranUpdated);
+    window.addEventListener('masjid_kategori_updated', handleKategoriUpdated);
 
     const fetchShalat = async () => {
       try {
@@ -421,6 +449,7 @@ export default function HomePage() {
     return () => {
       window.removeEventListener('masjid_identitas_updated', handleIdentitasUpdated);
       window.removeEventListener('masjid_saran_updated', handleSaranUpdated);
+      window.removeEventListener('masjid_kategori_updated', handleKategoriUpdated);
     };
   }, []);
 
@@ -1087,12 +1116,19 @@ export default function HomePage() {
                       </div>
 
                       <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                        <span className="text-[10px] md:text-[11px] font-bold text-slate-500">
-                          {new Date(item.tanggal).toLocaleDateString('id-ID', {
-                            weekday: 'short',
-                            day: 'numeric',
-                            month: 'short',
-                          })}
+                        <span className="text-[10px] md:text-[11px] font-bold text-slate-500 flex items-center gap-1.5">
+                          <span>
+                            {new Date(item.tanggal).toLocaleDateString('id-ID', {
+                              weekday: 'short',
+                              day: 'numeric',
+                              month: 'short',
+                            })}
+                          </span>
+                          {item.waktu && (
+                            <span className="text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded font-mono text-[9px] font-bold">
+                              {item.waktu} WIB
+                            </span>
+                          )}
                         </span>
                         <span className="text-[10px] md:text-[11px] font-bold text-[#0d8a5e] group-hover:translate-x-1 transition-transform flex items-center gap-1">
                           Detail <ArrowRight size={12} />
@@ -1156,6 +1192,7 @@ export default function HomePage() {
                             month: 'long',
                             year: 'numeric',
                           })}
+                          {selectedKajian.waktu && ` • Pukul ${selectedKajian.waktu} WIB`}
                         </p>
                       </div>
                       {selectedKajian.link && (
@@ -1576,23 +1613,13 @@ export default function HomePage() {
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-200 mb-1">
-                          Kategori Aspirasi
-                        </label>
-                        <select
-                          value={saranKategori}
-                          onChange={(e) => setSaranKategori(e.target.value as KategoriSaran)}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-white/15 bg-[#0a1f18] text-xs text-white focus:outline-hidden focus:border-emerald-400"
-                        >
-                          <option value="Umum">Umum</option>
-                          <option value="Fasilitas & Kebersihan">Fasilitas & Kebersihan</option>
-                          <option value="Kajian & Dakwah">Kajian & Dakwah</option>
-                          <option value="Pelayanan DKM">Pelayanan DKM</option>
-                          <option value="Keuangan">Transparansi Keuangan</option>
-                          <option value="Lainnya">Lainnya</option>
-                        </select>
-                      </div>
+                      <CustomDropdown
+                        label="Kategori Aspirasi"
+                        theme="dark"
+                        value={saranKategori}
+                        onChange={(val) => setSaranKategori(val as KategoriSaran)}
+                        options={saranDropdownOptions}
+                      />
 
                       <div>
                         <label className="block text-[11px] font-bold text-slate-200 mb-1">

@@ -59,7 +59,7 @@ export default function UnduhApkPage() {
     },
     {
       q: 'Berapa versi Android minimum yang didukung?',
-      a: 'Aplikasi mendukung sistem operasi Android 7.0 (Nougat) ke atas hingga Android 14/15 terbaru. Ukuran aplikasi sangat ringan (~14 MB) sehingga tidak membebani memori HP Anda.',
+      a: 'Aplikasi mendukung sistem operasi Android 7.0 (Nougat) ke atas hingga Android 14/15 terbaru. Ukuran aplikasi sangat ringan (~25 MB) sehingga tidak membebani memori HP Anda.',
     },
     {
       q: 'Apakah aplikasi memerlukan koneksi internet?',
@@ -142,7 +142,7 @@ export default function UnduhApkPage() {
                   <div className="grid grid-cols-3 gap-2 py-2 px-3 rounded-xl bg-black/25 border border-white/10 text-center text-[10px] sm:text-xs">
                     <div>
                       <span className="block text-slate-400 text-[10px]">Ukuran</span>
-                      <strong className="text-white font-semibold">~14 MB</strong>
+                      <strong className="text-white font-semibold">~25 MB</strong>
                     </div>
                     <div className="border-x border-white/10">
                       <span className="block text-slate-400 text-[10px]">Sistem</span>
@@ -259,7 +259,7 @@ export default function UnduhApkPage() {
                 </h4>
               </div>
               <p className="text-[10px] sm:text-xs text-slate-600 leading-snug sm:leading-relaxed">
-                Ukuran hemat (~14 MB), loading instan, dan hemat kuota data.
+                Ukuran hemat (~25 MB), loading instan, dan hemat kuota data.
               </p>
             </div>
 

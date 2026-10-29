@@ -9,6 +9,8 @@ import {
   WakafItem,
   IdentitasMasjid,
   SaranKritikItem,
+  KategoriItem,
+  ModulKategori,
 } from '@/types';
 
 // ==============================================================================
@@ -33,8 +35,59 @@ const INITIAL_WAKAF: WakafItem[] = [];
 const INITIAL_KHUTBAH: KhutbahItem[] = [];
 const INITIAL_SARAN_KRITIK: SaranKritikItem[] = [];
 
+export const INITIAL_KATEGORI: KategoriItem[] = [
+  // Kas Keuangan
+  { id: 1, modul: 'kas', nama: 'Infaq Jumat', deskripsi: 'Pemasukan rutin dari kotak infaq ibadah Shalat Jumat', tipe: 'masuk', urutan: 1, is_active: true },
+  { id: 2, modul: 'kas', nama: 'Donasi', deskripsi: 'Sumbangan sukarela, donasi transfer, dan kotak amal harian', tipe: 'masuk', urutan: 2, is_active: true },
+  { id: 3, modul: 'kas', nama: 'Zakat', deskripsi: 'Penerimaan dana zakat yang dikelola melalui kas', tipe: 'masuk', urutan: 3, is_active: true },
+  { id: 4, modul: 'kas', nama: 'Operasional', deskripsi: 'Biaya operasional harian, kebersihan, dan kesekretariatan', tipe: 'keluar', urutan: 4, is_active: true },
+  { id: 5, modul: 'kas', nama: 'Listrik & Air', deskripsi: 'Tagihan rutin utilitas listrik PLN dan PDAM/air masjid', tipe: 'keluar', urutan: 5, is_active: true },
+  { id: 6, modul: 'kas', nama: 'Honor', deskripsi: 'Honorarium penceramah, imam, muadzin, dan marbot', tipe: 'keluar', urutan: 6, is_active: true },
+  { id: 7, modul: 'kas', nama: 'Perawatan', deskripsi: 'Perbaikan fisik gedung, sound system, dan fasilitas ibadah', tipe: 'keluar', urutan: 7, is_active: true },
+  { id: 8, modul: 'kas', nama: 'Lainnya', deskripsi: 'Transaksi kas kebutuhan lain di luar kategori utama', tipe: 'semua', urutan: 8, is_active: true },
+
+  // Zakat & Qurban
+  { id: 9, modul: 'zakat', nama: 'Zakat Fitrah (uang)', deskripsi: 'Zakat fitrah per jiwa dalam bentuk mata uang rupiah', tipe: null, urutan: 1, is_active: true },
+  { id: 10, modul: 'zakat', nama: 'Zakat Fitrah (beras)', deskripsi: 'Zakat fitrah per jiwa dalam bentuk beras (Kg)', tipe: null, urutan: 2, is_active: true },
+  { id: 11, modul: 'zakat', nama: 'Zakat Mal', deskripsi: 'Zakat harta/penghasilan atas nisab dan haul', tipe: null, urutan: 3, is_active: true },
+  { id: 12, modul: 'zakat', nama: 'Qurban Sapi (1/7)', deskripsi: 'Iuran qurban 1/7 bagian untuk sapi', tipe: null, urutan: 4, is_active: true },
+  { id: 13, modul: 'zakat', nama: 'Qurban Kambing', deskripsi: 'Qurban 1 ekor kambing/domba', tipe: null, urutan: 5, is_active: true },
+  { id: 14, modul: 'zakat', nama: 'Penyaluran', deskripsi: 'Distribusi bantuan hak mustahiq / ashnaf zakat', tipe: null, urutan: 6, is_active: true },
+
+  // Harta Wakaf
+  { id: 15, modul: 'wakaf', nama: 'Tanah', deskripsi: 'Wakaf bidang tanah untuk sarana ibadah/dakwah', tipe: null, urutan: 1, is_active: true },
+  { id: 16, modul: 'wakaf', nama: 'Bangunan', deskripsi: 'Wakaf bangunan atau gedung fasilitas masjid', tipe: null, urutan: 2, is_active: true },
+  { id: 17, modul: 'wakaf', nama: 'Uang', deskripsi: 'Wakaf uang tunai produktif atau peruntukan khusus', tipe: null, urutan: 3, is_active: true },
+  { id: 18, modul: 'wakaf', nama: "Al-Qur'an", deskripsi: "Wakaf mushaf Al-Qur'an untuk jamaah dan pengajian", tipe: null, urutan: 4, is_active: true },
+  { id: 19, modul: 'wakaf', nama: 'Peralatan', deskripsi: 'Wakaf peralatan fisik, sound system, pendingin ruangan dll', tipe: null, urutan: 5, is_active: true },
+  { id: 20, modul: 'wakaf', nama: 'Lainnya', deskripsi: 'Wakaf benda bergerak/tidak bergerak lainnya', tipe: null, urutan: 6, is_active: true },
+
+  // Saran & Aspirasi Jamaah
+  { id: 21, modul: 'saran', nama: 'Umum', deskripsi: 'Aspirasi dan saran umum kemakmuran masjid', tipe: null, urutan: 1, is_active: true },
+  { id: 22, modul: 'saran', nama: 'Fasilitas & Kebersihan', deskripsi: 'Kenyamanan tempat wudhu, toilet, karpet, AC, dan ruang shalat', tipe: null, urutan: 2, is_active: true },
+  { id: 23, modul: 'saran', nama: 'Kajian & Dakwah', deskripsi: 'Topik pengajian, narasumber penceramah, dan jadwal kajian', tipe: null, urutan: 3, is_active: true },
+  { id: 24, modul: 'saran', nama: 'Pelayanan DKM', deskripsi: 'Kinerja pengurus, kepanitiaan, dan kemudahan pelayanan warga', tipe: null, urutan: 4, is_active: true },
+  { id: 25, modul: 'saran', nama: 'Keuangan', deskripsi: 'Transparansi laporan keuangan dan pengelolaan infaq', tipe: null, urutan: 5, is_active: true },
+  { id: 26, modul: 'saran', nama: 'Lainnya', deskripsi: 'Pertanyaan atau masukan topik lainnya', tipe: null, urutan: 6, is_active: true },
+
+  // Agenda, Khutbah & Kajian
+  { id: 27, modul: 'agenda', nama: 'Shalat Jumat', deskripsi: 'Ibadah rutin Shalat Jumat berjamaah dan khutbah', tipe: null, urutan: 1, is_active: true },
+  { id: 28, modul: 'agenda', nama: 'Kajian Ahad Subuh', deskripsi: "Pengajian rutin ba'da shalat Subuh hari Ahad", tipe: null, urutan: 2, is_active: true },
+  { id: 29, modul: 'agenda', nama: 'Tabligh Akbar', deskripsi: 'Peringatan Hari Besar Islam (PHBI) dan tabligh akbar', tipe: null, urutan: 3, is_active: true },
+  { id: 30, modul: 'agenda', nama: 'Kajian Muslimah', deskripsi: 'Majelis taklim ibu-ibu dan muslimah', tipe: null, urutan: 4, is_active: true },
+  { id: 31, modul: 'agenda', nama: 'Kajian Remaja', deskripsi: 'Pembinaan generasi muda dan remaja masjid', tipe: null, urutan: 5, is_active: true },
+
+  // Peran / Status Jamaah
+  { id: 32, modul: 'jamaah', nama: 'Jamaah', deskripsi: 'Warga umum dan jamaah lingkungan sekitar masjid', tipe: null, urutan: 1, is_active: true },
+  { id: 33, modul: 'jamaah', nama: 'Pengurus DKM', deskripsi: 'Jajaran pengurus Dewan Kemakmuran Masjid', tipe: null, urutan: 2, is_active: true },
+  { id: 34, modul: 'jamaah', nama: 'Imam', deskripsi: 'Imam rawatib atau imam shalat fardhu/Jumat', tipe: null, urutan: 3, is_active: true },
+  { id: 35, modul: 'jamaah', nama: 'Muadzin', deskripsi: 'Petugas adzan dan iqamah masjid', tipe: null, urutan: 4, is_active: true },
+  { id: 36, modul: 'jamaah', nama: 'Remaja Masjid', deskripsi: 'Anggota dan pengurus Ikatan Remaja Masjid (IRMA)', tipe: null, urutan: 5, is_active: true },
+  { id: 37, modul: 'jamaah', nama: 'Donatur', deskripsi: 'Dermawan dan donatur tetap kas masjid', tipe: null, urutan: 6, is_active: true },
+];
+
 // Helper local storage & Auto-purge cache lama agar mulai bersih dari 0
-const STORAGE_DATA_VERSION = 'v3_offline_cache_no_dummy';
+const STORAGE_DATA_VERSION = 'v6_jamaah_khotib';
 
 function checkAndPurgeLegacyData(): void {
   if (typeof window === 'undefined') return;
@@ -49,6 +102,7 @@ function checkAndPurgeLegacyData(): void {
       localStorage.removeItem('masjid_wakaf_data');
       localStorage.removeItem('masjid_petugas_jumat_data');
       localStorage.removeItem('masjid_saran_data');
+      localStorage.removeItem('masjid_kategori_data');
       localStorage.setItem('masjid_data_version', STORAGE_DATA_VERSION);
     }
   } catch (err) {
@@ -855,10 +909,170 @@ export const DataService = {
   },
 
   // ==========================================
+  // MASTER KATEGORI & PILIHAN DROPDOWN
+  // ==========================================
+  async getKategori(modul?: ModulKategori): Promise<KategoriItem[]> {
+    let list: KategoriItem[] = [];
+    if (isSupabaseConfigured && supabase) {
+      try {
+        let query = supabase.from('kategori').select('*').order('urutan', { ascending: true });
+        if (modul) {
+          query = query.eq('modul', modul);
+        }
+        const { data, error } = await query;
+        if (!error && data && data.length > 0) {
+          list = data as KategoriItem[];
+          const currentAll = getStored<KategoriItem[]>('masjid_kategori_data', INITIAL_KATEGORI);
+          const otherItems = modul ? currentAll.filter((k) => k.modul !== modul) : [];
+          setStored('masjid_kategori_data', [...otherItems, ...list]);
+          return list;
+        } else if (!error && (!data || data.length === 0)) {
+          // Bila tabel Supabase masih kosong, lakukan inisialisasi awal otomatis
+          try {
+            const seedPayload = modul ? INITIAL_KATEGORI.filter((k) => k.modul === modul) : INITIAL_KATEGORI;
+            const insertPayload = seedPayload.map(({ id: _ignoredId, ...rest }) => rest);
+            await supabase.from('kategori').upsert(insertPayload, { onConflict: 'modul,nama' });
+          } catch (seedErr) {
+            console.warn('Auto seed supabase kategori warning:', seedErr);
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase getKategori offline/fallback:', err);
+      }
+    }
+
+    const stored = getStored<KategoriItem[]>('masjid_kategori_data', INITIAL_KATEGORI);
+    list = modul ? stored.filter((k) => k.modul === modul) : stored;
+    return [...list].sort((a, b) => (a.urutan || 0) - (b.urutan || 0));
+  },
+
+  async addKategori(item: Omit<KategoriItem, 'id' | 'created_at'>): Promise<KategoriItem> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('kategori')
+          .insert([{ ...item }])
+          .select()
+          .single();
+        if (!error && data) {
+          const current = getStored<KategoriItem[]>('masjid_kategori_data', INITIAL_KATEGORI);
+          const updated = [...current, data as KategoriItem];
+          setStored('masjid_kategori_data', updated);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('masjid_kategori_updated', { detail: data }));
+          }
+          return data as KategoriItem;
+        }
+      } catch (err) {
+        console.warn('Supabase addKategori fallback to localStorage:', err);
+      }
+    }
+
+    const current = getStored<KategoriItem[]>('masjid_kategori_data', INITIAL_KATEGORI);
+    const newItem: KategoriItem = {
+      ...item,
+      id: Date.now(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    const updated = [...current, newItem];
+    setStored('masjid_kategori_data', updated);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('masjid_kategori_updated', { detail: newItem }));
+    }
+    return newItem;
+  },
+
+  async updateKategori(id: number | string, item: Partial<KategoriItem>): Promise<KategoriItem> {
+    const payload = { ...item, updated_at: new Date().toISOString() };
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('kategori')
+          .update(payload)
+          .eq('id', id)
+          .select()
+          .single();
+        if (!error && data) {
+          const current = getStored<KategoriItem[]>('masjid_kategori_data', INITIAL_KATEGORI);
+          const updated = current.map((k) => (String(k.id) === String(id) ? (data as KategoriItem) : k));
+          setStored('masjid_kategori_data', updated);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('masjid_kategori_updated', { detail: data }));
+          }
+          return data as KategoriItem;
+        }
+      } catch (err) {
+        console.warn('Supabase updateKategori fallback to localStorage:', err);
+      }
+    }
+
+    const current = getStored<KategoriItem[]>('masjid_kategori_data', INITIAL_KATEGORI);
+    const updated = current.map((k) => (String(k.id) === String(id) ? { ...k, ...payload } : k));
+    setStored('masjid_kategori_data', updated);
+    const target = updated.find((k) => String(k.id) === String(id)) as KategoriItem;
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('masjid_kategori_updated', { detail: target }));
+    }
+    return target;
+  },
+
+  async deleteKategori(id: number | string): Promise<boolean> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error } = await supabase.from('kategori').delete().eq('id', id);
+        if (!error) {
+          const current = getStored<KategoriItem[]>('masjid_kategori_data', INITIAL_KATEGORI);
+          const updated = current.filter((k) => String(k.id) !== String(id));
+          setStored('masjid_kategori_data', updated);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('masjid_kategori_updated', { detail: { id, deleted: true } }));
+          }
+          return true;
+        }
+      } catch (err) {
+        console.warn('Supabase deleteKategori error:', err);
+      }
+    }
+
+    const current = getStored<KategoriItem[]>('masjid_kategori_data', INITIAL_KATEGORI);
+    const updated = current.filter((k) => String(k.id) !== String(id));
+    setStored('masjid_kategori_data', updated);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('masjid_kategori_updated', { detail: { id, deleted: true } }));
+    }
+    return true;
+  },
+
+  async resetKategoriDefault(): Promise<KategoriItem[]> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('kategori').delete().neq('id', 0);
+        const payload = INITIAL_KATEGORI.map(({ id: _ignoredId, ...rest }) => rest);
+        const { data, error } = await supabase.from('kategori').insert(payload).select();
+        if (!error && data) {
+          setStored('masjid_kategori_data', data as KategoriItem[]);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('masjid_kategori_updated'));
+          }
+          return data as KategoriItem[];
+        }
+      } catch (err) {
+        console.warn('Supabase resetKategori error:', err);
+      }
+    }
+    setStored('masjid_kategori_data', INITIAL_KATEGORI);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('masjid_kategori_updated'));
+    }
+    return INITIAL_KATEGORI;
+  },
+
+  // ==========================================
   // BACKUP & RESTORE DATA (JSON)
   // ==========================================
   async exportAllData(): Promise<Record<string, any>> {
-    const [id, kas, jam, ag, zk, inv, wk, jd, sr] = await Promise.all([
+    const [id, kas, jam, ag, zk, inv, wk, jd, sr, kat] = await Promise.all([
       this.getIdentitas(),
       this.getKas(),
       this.getJamaah(),
@@ -868,6 +1082,7 @@ export const DataService = {
       this.getWakaf(),
       this.getPetugasJumat(),
       this.getSaranKritik(),
+      this.getKategori(),
     ]);
 
     return {
@@ -882,6 +1097,7 @@ export const DataService = {
       wakaf: wk,
       petugas_jumat: jd,
       saran_kritik: sr,
+      kategori: kat,
     };
   },
 
@@ -899,6 +1115,11 @@ export const DataService = {
     if (data.wakaf) setStored('masjid_wakaf_data', data.wakaf);
     if (data.petugas_jumat) setStored('masjid_petugas_jumat_data', data.petugas_jumat);
     if (data.saran_kritik) setStored('masjid_saran_data', data.saran_kritik);
+    if (data.kategori) setStored('masjid_kategori_data', data.kategori);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('masjid_kategori_updated'));
+    }
 
     return true;
   },
@@ -913,6 +1134,7 @@ export const DataService = {
       localStorage.removeItem('masjid_wakaf_data');
       localStorage.removeItem('masjid_petugas_jumat_data');
       localStorage.removeItem('masjid_saran_data');
+      localStorage.removeItem('masjid_kategori_data');
     }
     return true;
   },

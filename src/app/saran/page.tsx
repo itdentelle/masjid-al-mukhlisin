@@ -11,7 +11,6 @@ import {
   Clock,
   ShieldCheck,
   RefreshCw,
-  Sparkles,
   User,
   Heart,
   Phone,
@@ -25,12 +24,23 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
+import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 import { DataService } from '@/lib/data-service';
-import { SaranKritikItem, IdentitasMasjid, KategoriSaran } from '@/types';
+import { SaranKritikItem, IdentitasMasjid, KategoriSaran, KategoriItem } from '@/types';
+
+const DEFAULT_SARAN_CATEGORIES = [
+  'Umum',
+  'Fasilitas & Kebersihan',
+  'Kajian & Dakwah',
+  'Pelayanan DKM',
+  'Keuangan',
+  'Lainnya',
+];
 
 export default function SaranKritikPublicPage() {
   const [saranList, setSaranList] = useState<SaranKritikItem[]>([]);
   const [identitas, setIdentitas] = useState<IdentitasMasjid | null>(null);
+  const [kategoriSaran, setKategoriSaran] = useState<KategoriItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
@@ -54,12 +64,15 @@ export default function SaranKritikPublicPage() {
       const getSaranFn = DataService?.getSaranKritik;
       const getIdentitasFn = DataService?.getIdentitas;
 
-      const [saranRes, idRes] = await Promise.all([
+      const [saranRes, idRes, catRes] = await Promise.all([
         typeof getSaranFn === 'function' ? getSaranFn(true) : Promise.resolve([]),
         typeof getIdentitasFn === 'function' ? getIdentitasFn() : Promise.resolve(null),
+        DataService.getKategori('saran'),
       ]);
       setSaranList(Array.isArray(saranRes) ? saranRes : []);
       if (idRes) setIdentitas(idRes);
+      const activeCats = catRes.filter((k) => k.is_active !== false);
+      if (activeCats.length > 0) setKategoriSaran(activeCats);
     } catch (err) {
       console.error('Failed to load saran:', err);
     } finally {
@@ -70,14 +83,54 @@ export default function SaranKritikPublicPage() {
   useEffect(() => {
     loadData();
 
+    const handleKategoriUpdate = () => {
+      DataService.getKategori('saran').then((cats) => {
+        const activeCats = cats.filter((k) => k.is_active !== false);
+        if (activeCats.length > 0) setKategoriSaran(activeCats);
+      });
+    };
+
     const handleSaranUpdated = () => {
       loadData();
     };
+
+    window.addEventListener('masjid_kategori_updated', handleKategoriUpdate);
     window.addEventListener('masjid_saran_updated', handleSaranUpdated);
     return () => {
+      window.removeEventListener('masjid_kategori_updated', handleKategoriUpdate);
       window.removeEventListener('masjid_saran_updated', handleSaranUpdated);
     };
   }, []);
+
+  const saranOptions = useMemo(() => {
+    if (kategoriSaran.length > 0) {
+      return kategoriSaran.map((k) => k.nama);
+    }
+    return DEFAULT_SARAN_CATEGORIES;
+  }, [kategoriSaran]);
+
+  const dropdownFilterKategoriOptions: DropdownOption[] = useMemo(() => {
+    return [
+      { value: 'all', label: 'Semua Topik' },
+      ...saranOptions.map((opt) => ({
+        value: opt,
+        label: opt,
+      })),
+    ];
+  }, [saranOptions]);
+
+  const dropdownFilterStatusOptions: DropdownOption[] = [
+    { value: 'all', label: 'Semua Status Respon' },
+    { value: 'terjawab', label: 'Sudah Ditanggapi DKM' },
+    { value: 'belum', label: 'Sedang Ditinjau' },
+  ];
+
+  const dropdownFormKategoriOptions: DropdownOption[] = useMemo(() => {
+    return saranOptions.map((opt) => ({
+      value: opt,
+      label: opt,
+    }));
+  }, [saranOptions]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -282,29 +335,19 @@ export default function SaranKritikPublicPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <select
+              <CustomDropdown
                 value={selectedKategori}
-                onChange={(e) => setSelectedKategori(e.target.value)}
-                className="px-4 py-3 rounded-2xl border border-slate-200 text-xs md:text-sm font-semibold text-slate-700 bg-white focus:outline-hidden focus:border-emerald-600"
-              >
-                <option value="all">Semua Topik</option>
-                <option value="Umum">Umum</option>
-                <option value="Fasilitas & Kebersihan">Fasilitas & Kebersihan</option>
-                <option value="Kajian & Dakwah">Kajian & Dakwah</option>
-                <option value="Pelayanan DKM">Pelayanan DKM</option>
-                <option value="Keuangan">Keuangan</option>
-                <option value="Lainnya">Lainnya</option>
-              </select>
+                onChange={(val) => setSelectedKategori(val)}
+                options={dropdownFilterKategoriOptions}
+                className="w-full sm:w-48"
+              />
 
-              <select
+              <CustomDropdown
                 value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-4 py-3 rounded-2xl border border-slate-200 text-xs md:text-sm font-semibold text-slate-700 bg-white focus:outline-hidden focus:border-emerald-600"
-              >
-                <option value="all">Semua Status Respon</option>
-                <option value="terjawab">Sudah Ditanggapi DKM</option>
-                <option value="belum">Sedang Ditinjau</option>
-              </select>
+                onChange={(val) => setSelectedStatus(val)}
+                options={dropdownFilterStatusOptions}
+                className="w-full sm:w-56"
+              />
             </div>
           </div>
 
@@ -313,21 +356,19 @@ export default function SaranKritikPublicPage() {
             <span className="font-bold text-slate-400 text-[11px] uppercase tracking-wider shrink-0 mr-1">
               Kategori:
             </span>
-            {['all', 'Fasilitas & Kebersihan', 'Kajian & Dakwah', 'Pelayanan DKM', 'Keuangan', 'Umum'].map(
-              (cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedKategori(cat)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
-                    selectedKategori === cat
-                      ? 'bg-emerald-800 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {cat === 'all' ? 'Semua' : cat}
-                </button>
-              )
-            )}
+            {['all', ...saranOptions].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedKategori(cat)}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+                  selectedKategori === cat
+                    ? 'bg-emerald-800 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {cat === 'all' ? 'Semua' : cat}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -569,23 +610,12 @@ export default function SaranKritikPublicPage() {
                   </p>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Kategori Aspirasi
-                  </label>
-                  <select
-                    value={kategori}
-                    onChange={(e) => setKategori(e.target.value as KategoriSaran)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-hidden focus:border-emerald-600 bg-white"
-                  >
-                    <option value="Umum">Umum</option>
-                    <option value="Fasilitas & Kebersihan">Fasilitas & Kebersihan</option>
-                    <option value="Kajian & Dakwah">Kajian & Dakwah</option>
-                    <option value="Pelayanan DKM">Pelayanan DKM</option>
-                    <option value="Keuangan">Transparansi Keuangan</option>
-                    <option value="Lainnya">Lainnya</option>
-                  </select>
-                </div>
+                <CustomDropdown
+                  label="Kategori Aspirasi"
+                  value={kategori}
+                  onChange={(val) => setKategori(val as KategoriSaran)}
+                  options={dropdownFormKategoriOptions}
+                />
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">

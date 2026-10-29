@@ -17,6 +17,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import AdminLayout from '@/components/layout/admin-layout';
+import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 import { DataService } from '@/lib/data-service';
 import { PetugasJumatItem, JamaahItem } from '@/types';
 
@@ -96,6 +97,101 @@ export default function PetugasJumatPage() {
   const kandidatRemaja = useMemo(() => {
     return dataJamaah.filter((j) => j.peran === 'Remaja Masjid');
   }, [dataJamaah]);
+
+  const khatibOptions: DropdownOption[] = useMemo(() => {
+    const list: DropdownOption[] = [];
+    kandidatImam.forEach((j) => {
+      list.push({
+        value: j.nama,
+        label: j.nama,
+        group: 'Imam Masjid (Peran: Imam)',
+      });
+    });
+    kandidatDkm.forEach((j) => {
+      list.push({
+        value: j.nama,
+        label: j.nama,
+        group: 'Pengurus DKM',
+      });
+    });
+    return list;
+  }, [kandidatImam, kandidatDkm]);
+
+  const imamOptions: DropdownOption[] = useMemo(() => {
+    const list: DropdownOption[] = [
+      { value: '', label: '(Sama dengan Khatib)' },
+    ];
+    kandidatImam.forEach((j) => {
+      list.push({
+        value: j.nama,
+        label: j.nama,
+        group: 'Imam Masjid (Peran: Imam)',
+      });
+    });
+    kandidatDkm.forEach((j) => {
+      list.push({
+        value: j.nama,
+        label: j.nama,
+        group: 'Pengurus DKM',
+      });
+    });
+    return list;
+  }, [kandidatImam, kandidatDkm]);
+
+  const muadzinOptions: DropdownOption[] = useMemo(() => {
+    const list: DropdownOption[] = [];
+    kandidatMuadzin.forEach((j) => {
+      list.push({
+        value: j.nama,
+        label: j.nama,
+        group: 'Muadzin Masjid (Peran: Muadzin)',
+      });
+    });
+    kandidatRemaja.forEach((j) => {
+      list.push({
+        value: j.nama,
+        label: `${j.nama} (Remaja)`,
+        group: 'Remaja Masjid (Kader Bilal)',
+      });
+    });
+    return list;
+  }, [kandidatMuadzin, kandidatRemaja]);
+
+  const getEditKhatibOptions = useMemo(() => {
+    if (!editItem?.khatib) return khatibOptions;
+    const exists = khatibOptions.some((o) => o.value === editItem.khatib);
+    if (!exists) {
+      return [
+        { value: editItem.khatib, label: `${editItem.khatib} (Tersimpan)`, group: 'Tersimpan' },
+        ...khatibOptions,
+      ];
+    }
+    return khatibOptions;
+  }, [editItem?.khatib, khatibOptions]);
+
+  const getEditImamOptions = useMemo(() => {
+    if (!editItem?.imam) return imamOptions;
+    const exists = imamOptions.some((o) => o.value === editItem.imam);
+    if (!exists) {
+      return [
+        { value: editItem.imam, label: `${editItem.imam} (Tersimpan)`, group: 'Tersimpan' },
+        ...imamOptions,
+      ];
+    }
+    return imamOptions;
+  }, [editItem?.imam, imamOptions]);
+
+  const getEditMuadzinOptions = useMemo(() => {
+    if (!editItem?.muadzin) return muadzinOptions;
+    const exists = muadzinOptions.some((o) => o.value === editItem.muadzin);
+    if (!exists) {
+      return [
+        { value: editItem.muadzin, label: `${editItem.muadzin} (Tersimpan)`, group: 'Tersimpan' },
+        ...muadzinOptions,
+      ];
+    }
+    return muadzinOptions;
+  }, [editItem?.muadzin, muadzinOptions]);
 
   // Filtered
   const filteredPetugas = useMemo(() => {
@@ -312,7 +408,7 @@ export default function PetugasJumatPage() {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
-                  <th className="py-3.5 px-4 w-10 text-center">
+                  <th className="py-3 px-3 sm:px-4 w-10 text-center">
                     <input
                       type="checkbox"
                       checked={selectedIds.length === filteredPetugas.length && filteredPetugas.length > 0}
@@ -320,12 +416,12 @@ export default function PetugasJumatPage() {
                       className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                     />
                   </th>
-                  <th className="py-3.5 px-4 w-12 text-center">No</th>
-                  <th className="py-3.5 px-4">Tanggal Jumat</th>
-                  <th className="py-3.5 px-4">Khatib Shalat</th>
-                  <th className="py-3.5 px-4">Imam Shalat</th>
-                  <th className="py-3.5 px-4">Muadzin</th>
-                  <th className="py-3.5 px-4 text-center w-24">Aksi</th>
+                  <th className="py-3 px-3 sm:px-4 w-12 text-center">No</th>
+                  <th className="py-3 px-3 sm:px-4">Tanggal Jumat</th>
+                  <th className="py-3 px-3 sm:px-4">Khatib Shalat</th>
+                  <th className="py-3 px-3 sm:px-4">Imam Shalat</th>
+                  <th className="py-3 px-3 sm:px-4">Muadzin</th>
+                  <th className="py-3 px-3 sm:px-4 text-center w-24">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -345,7 +441,7 @@ export default function PetugasJumatPage() {
                   filteredPetugas.map((item, index) => {
                     return (
                       <tr key={item.id} className="hover:bg-slate-50/60 transition group">
-                        <td className="py-3 px-4 text-center">
+                        <td className="py-2.5 sm:py-3 px-3 sm:px-4 text-center">
                           <input
                             type="checkbox"
                             checked={selectedIds.includes(item.id)}
@@ -353,10 +449,10 @@ export default function PetugasJumatPage() {
                             className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                           />
                         </td>
-                        <td className="py-3 px-4 text-center text-slate-400 font-medium">
+                        <td className="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-slate-400 font-medium">
                           {index + 1}
                         </td>
-                        <td className="py-3 px-4 font-bold text-slate-800 whitespace-nowrap">
+                        <td className="py-2.5 sm:py-3 px-3 sm:px-4 font-bold text-slate-800 whitespace-nowrap">
                           <span className="flex items-center gap-2">
                             <Calendar size={14} className="text-emerald-600" />
                             {new Date(item.tanggal).toLocaleDateString('id-ID', {
@@ -367,16 +463,16 @@ export default function PetugasJumatPage() {
                             })}
                           </span>
                         </td>
-                        <td className="py-3 px-4 font-bold text-emerald-800">
+                        <td className="py-2.5 sm:py-3 px-3 sm:px-4 font-bold text-emerald-800 whitespace-nowrap">
                           {item.khatib}
                         </td>
-                        <td className="py-3 px-4 text-slate-700 font-medium">
+                        <td className="py-2.5 sm:py-3 px-3 sm:px-4 text-slate-700 font-medium whitespace-nowrap">
                           {item.imam}
                         </td>
-                        <td className="py-3 px-4 text-slate-700">
+                        <td className="py-2.5 sm:py-3 px-3 sm:px-4 text-slate-700 whitespace-nowrap">
                           {item.muadzin}
                         </td>
-                        <td className="py-3 px-4 text-center">
+                        <td className="py-2.5 sm:py-3 px-3 sm:px-4 text-center">
                           <div className="flex items-center justify-center gap-1.5 opacity-90 group-hover:opacity-100">
                             <button
                               onClick={() => {
@@ -436,8 +532,10 @@ export default function PetugasJumatPage() {
 
                 {/* Khatib Dropdown / Input */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block font-bold text-slate-700">Khatib Shalat Jumat *</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                      Khatib Shalat Jumat <span className="text-rose-500">*</span>
+                    </label>
                     <button
                       type="button"
                       onClick={() => {
@@ -451,38 +549,14 @@ export default function PetugasJumatPage() {
                   </div>
 
                   {!customKhatib ? (
-                    <select
-                      required
+                    <CustomDropdown
                       value={formData.khatib}
-                      onChange={(e) => {
-                        if (e.target.value === '__custom__') {
-                          setCustomKhatib(true);
-                          setFormData({ ...formData, khatib: '' });
-                        } else {
-                          setFormData({ ...formData, khatib: e.target.value });
-                        }
-                      }}
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800 cursor-pointer"
-                    >
-                      <option value="">-- Pilih Khatib (Peran: Imam) --</option>
-                      <optgroup label="Imam Masjid (Peran: Imam)">
-                        {kandidatImam.map((j) => (
-                          <option key={j.id} value={j.nama}>
-                            {j.nama}
-                          </option>
-                        ))}
-                      </optgroup>
-                      {kandidatDkm.length > 0 && (
-                        <optgroup label="Pengurus DKM">
-                          {kandidatDkm.map((j) => (
-                            <option key={j.id} value={j.nama}>
-                              {j.nama} (DKM)
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      <option value="__custom__">+ Input Manual (Ustadz Tamu Luar)...</option>
-                    </select>
+                      onChange={(val) => setFormData({ ...formData, khatib: val })}
+                      options={khatibOptions}
+                      placeholder="Pilih Khatib dari Data Jamaah..."
+                      searchable={true}
+                      required={true}
+                    />
                   ) : (
                     <input
                       type="text"
@@ -490,15 +564,17 @@ export default function PetugasJumatPage() {
                       placeholder="Ketik nama khatib / ustadz tamu luar..."
                       value={formData.khatib}
                       onChange={(e) => setFormData({ ...formData, khatib: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="w-full p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl focus:outline-none focus:border-emerald-500 focus:ring-3 focus:ring-emerald-500/15 font-bold text-xs text-slate-800"
                     />
                   )}
                 </div>
 
                 {/* Imam Dropdown / Input */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block font-bold text-slate-700">Imam Shalat (kosongkan jika sama dengan Khatib)</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                      Imam Shalat (kosongkan jika sama dengan Khatib)
+                    </label>
                     <button
                       type="button"
                       onClick={() => {
@@ -512,52 +588,30 @@ export default function PetugasJumatPage() {
                   </div>
 
                   {!customImam ? (
-                    <select
+                    <CustomDropdown
                       value={formData.imam}
-                      onChange={(e) => {
-                        if (e.target.value === '__custom__') {
-                          setCustomImam(true);
-                          setFormData({ ...formData, imam: '' });
-                        } else {
-                          setFormData({ ...formData, imam: e.target.value });
-                        }
-                      }}
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800 cursor-pointer"
-                    >
-                      <option value="">(Sama dengan Khatib)</option>
-                      <optgroup label="Imam Masjid (Peran: Imam)">
-                        {kandidatImam.map((j) => (
-                          <option key={j.id} value={j.nama}>
-                            {j.nama}
-                          </option>
-                        ))}
-                      </optgroup>
-                      {kandidatDkm.length > 0 && (
-                        <optgroup label="Pengurus DKM">
-                          {kandidatDkm.map((j) => (
-                            <option key={j.id} value={j.nama}>
-                              {j.nama} (DKM)
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      <option value="__custom__">+ Input Manual (Imam Lain)...</option>
-                    </select>
+                      onChange={(val) => setFormData({ ...formData, imam: val })}
+                      options={imamOptions}
+                      placeholder="(Sama dengan Khatib)"
+                      searchable={true}
+                    />
                   ) : (
                     <input
                       type="text"
                       placeholder="Ketik nama imam shalat..."
                       value={formData.imam}
                       onChange={(e) => setFormData({ ...formData, imam: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="w-full p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl focus:outline-none focus:border-emerald-500 focus:ring-3 focus:ring-emerald-500/15 font-bold text-xs text-slate-800"
                     />
                   )}
                 </div>
 
                 {/* Muadzin Dropdown / Input */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block font-bold text-slate-700">Muadzin / Bilal</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                      Muadzin / Bilal
+                    </label>
                     <button
                       type="button"
                       onClick={() => {
@@ -571,44 +625,20 @@ export default function PetugasJumatPage() {
                   </div>
 
                   {!customMuadzin ? (
-                    <select
+                    <CustomDropdown
                       value={formData.muadzin}
-                      onChange={(e) => {
-                        if (e.target.value === '__custom__') {
-                          setCustomMuadzin(true);
-                          setFormData({ ...formData, muadzin: '' });
-                        } else {
-                          setFormData({ ...formData, muadzin: e.target.value });
-                        }
-                      }}
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800 cursor-pointer"
-                    >
-                      <option value="">-- Pilih Muadzin (Peran: Muadzin) --</option>
-                      <optgroup label="Muadzin Masjid (Peran: Muadzin)">
-                        {kandidatMuadzin.map((j) => (
-                          <option key={j.id} value={j.nama}>
-                            {j.nama}
-                          </option>
-                        ))}
-                      </optgroup>
-                      {kandidatRemaja.length > 0 && (
-                        <optgroup label="Remaja Masjid (Kader Bilal)">
-                          {kandidatRemaja.map((j) => (
-                            <option key={j.id} value={j.nama}>
-                              {j.nama} (Remaja)
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      <option value="__custom__">+ Input Manual (Bilal Lain)...</option>
-                    </select>
+                      onChange={(val) => setFormData({ ...formData, muadzin: val })}
+                      options={muadzinOptions}
+                      placeholder="Pilih Muadzin (Peran: Muadzin)..."
+                      searchable={true}
+                    />
                   ) : (
                     <input
                       type="text"
                       placeholder="Ketik nama muadzin / bilal..."
                       value={formData.muadzin}
                       onChange={(e) => setFormData({ ...formData, muadzin: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="w-full p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl focus:outline-none focus:border-emerald-500 focus:ring-3 focus:ring-emerald-500/15 font-bold text-xs text-slate-800"
                     />
                   )}
                 </div>
@@ -663,8 +693,10 @@ export default function PetugasJumatPage() {
 
                 {/* Edit Khatib */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block font-bold text-slate-700">Khatib Shalat Jumat *</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                      Khatib Shalat Jumat <span className="text-rose-500">*</span>
+                    </label>
                     <button
                       type="button"
                       onClick={() => setEditCustomKhatib(!editCustomKhatib)}
@@ -675,58 +707,31 @@ export default function PetugasJumatPage() {
                   </div>
 
                   {!editCustomKhatib ? (
-                    <select
-                      required
+                    <CustomDropdown
                       value={editItem.khatib}
-                      onChange={(e) => {
-                        if (e.target.value === '__custom__') {
-                          setEditCustomKhatib(true);
-                          setEditItem({ ...editItem, khatib: '' });
-                        } else {
-                          setEditItem({ ...editItem, khatib: e.target.value });
-                        }
-                      }}
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800 cursor-pointer"
-                    >
-                      <option value="">-- Pilih Khatib (Peran: Imam) --</option>
-                      {editItem.khatib &&
-                        !kandidatImam.some((j) => j.nama === editItem.khatib) &&
-                        !kandidatDkm.some((j) => j.nama === editItem.khatib) && (
-                          <option value={editItem.khatib}>{editItem.khatib} (Tersimpan)</option>
-                        )}
-                      <optgroup label="Imam Masjid (Peran: Imam)">
-                        {kandidatImam.map((j) => (
-                          <option key={j.id} value={j.nama}>
-                            {j.nama}
-                          </option>
-                        ))}
-                      </optgroup>
-                      {kandidatDkm.length > 0 && (
-                        <optgroup label="Pengurus DKM">
-                          {kandidatDkm.map((j) => (
-                            <option key={j.id} value={j.nama}>
-                              {j.nama} (DKM)
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      <option value="__custom__">+ Input Manual (Lainnya)...</option>
-                    </select>
+                      onChange={(val) => setEditItem({ ...editItem, khatib: val })}
+                      options={getEditKhatibOptions}
+                      placeholder="Pilih Khatib dari Data Jamaah..."
+                      searchable={true}
+                      required={true}
+                    />
                   ) : (
                     <input
                       type="text"
                       required
                       value={editItem.khatib}
                       onChange={(e) => setEditItem({ ...editItem, khatib: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl focus:outline-none focus:border-emerald-500 focus:ring-3 focus:ring-emerald-500/15 font-bold text-xs text-slate-800"
                     />
                   )}
                 </div>
 
                 {/* Edit Imam */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block font-bold text-slate-700">Imam Shalat</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                      Imam Shalat
+                    </label>
                     <button
                       type="button"
                       onClick={() => setEditCustomImam(!editCustomImam)}
@@ -737,56 +742,29 @@ export default function PetugasJumatPage() {
                   </div>
 
                   {!editCustomImam ? (
-                    <select
+                    <CustomDropdown
                       value={editItem.imam}
-                      onChange={(e) => {
-                        if (e.target.value === '__custom__') {
-                          setEditCustomImam(true);
-                          setEditItem({ ...editItem, imam: '' });
-                        } else {
-                          setEditItem({ ...editItem, imam: e.target.value });
-                        }
-                      }}
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800 cursor-pointer"
-                    >
-                      <option value="">(Sama dengan Khatib)</option>
-                      {editItem.imam &&
-                        !kandidatImam.some((j) => j.nama === editItem.imam) &&
-                        !kandidatDkm.some((j) => j.nama === editItem.imam) && (
-                          <option value={editItem.imam}>{editItem.imam} (Tersimpan)</option>
-                        )}
-                      <optgroup label="Imam Masjid (Peran: Imam)">
-                        {kandidatImam.map((j) => (
-                          <option key={j.id} value={j.nama}>
-                            {j.nama}
-                          </option>
-                        ))}
-                      </optgroup>
-                      {kandidatDkm.length > 0 && (
-                        <optgroup label="Pengurus DKM">
-                          {kandidatDkm.map((j) => (
-                            <option key={j.id} value={j.nama}>
-                              {j.nama} (DKM)
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      <option value="__custom__">+ Input Manual (Lainnya)...</option>
-                    </select>
+                      onChange={(val) => setEditItem({ ...editItem, imam: val })}
+                      options={getEditImamOptions}
+                      placeholder="(Sama dengan Khatib)"
+                      searchable={true}
+                    />
                   ) : (
                     <input
                       type="text"
                       value={editItem.imam}
                       onChange={(e) => setEditItem({ ...editItem, imam: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl focus:outline-none focus:border-emerald-500 focus:ring-3 focus:ring-emerald-500/15 font-bold text-xs text-slate-800"
                     />
                   )}
                 </div>
 
                 {/* Edit Muadzin */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block font-bold text-slate-700">Muadzin / Bilal</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                      Muadzin / Bilal
+                    </label>
                     <button
                       type="button"
                       onClick={() => setEditCustomMuadzin(!editCustomMuadzin)}
@@ -797,48 +775,19 @@ export default function PetugasJumatPage() {
                   </div>
 
                   {!editCustomMuadzin ? (
-                    <select
+                    <CustomDropdown
                       value={editItem.muadzin}
-                      onChange={(e) => {
-                        if (e.target.value === '__custom__') {
-                          setEditCustomMuadzin(true);
-                          setEditItem({ ...editItem, muadzin: '' });
-                        } else {
-                          setEditItem({ ...editItem, muadzin: e.target.value });
-                        }
-                      }}
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800 cursor-pointer"
-                    >
-                      <option value="">-- Pilih Muadzin (Peran: Muadzin) --</option>
-                      {editItem.muadzin &&
-                        !kandidatMuadzin.some((j) => j.nama === editItem.muadzin) &&
-                        !kandidatRemaja.some((j) => j.nama === editItem.muadzin) && (
-                          <option value={editItem.muadzin}>{editItem.muadzin} (Tersimpan)</option>
-                        )}
-                      <optgroup label="Muadzin Masjid (Peran: Muadzin)">
-                        {kandidatMuadzin.map((j) => (
-                          <option key={j.id} value={j.nama}>
-                            {j.nama}
-                          </option>
-                        ))}
-                      </optgroup>
-                      {kandidatRemaja.length > 0 && (
-                        <optgroup label="Remaja Masjid (Kader Bilal)">
-                          {kandidatRemaja.map((j) => (
-                            <option key={j.id} value={j.nama}>
-                              {j.nama} (Remaja)
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      <option value="__custom__">+ Input Manual (Lainnya)...</option>
-                    </select>
+                      onChange={(val) => setEditItem({ ...editItem, muadzin: val })}
+                      options={getEditMuadzinOptions}
+                      placeholder="Pilih Muadzin (Peran: Muadzin)..."
+                      searchable={true}
+                    />
                   ) : (
                     <input
                       type="text"
                       value={editItem.muadzin}
                       onChange={(e) => setEditItem({ ...editItem, muadzin: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl focus:outline-none focus:border-emerald-500 focus:ring-3 focus:ring-emerald-500/15 font-bold text-xs text-slate-800"
                     />
                   )}
                 </div>

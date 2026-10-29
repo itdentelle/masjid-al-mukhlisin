@@ -15,17 +15,27 @@ import {
   Wheat,
   Scale,
   Users2,
-  Sparkles,
   RefreshCw,
   TrendingDown,
   Calendar,
 } from 'lucide-react';
 import AdminLayout from '@/components/layout/admin-layout';
+import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 import { DataService } from '@/lib/data-service';
-import { ZakatQurbanItem, JenisZakat } from '@/types';
+import { ZakatQurbanItem, JenisZakat, KategoriItem } from '@/types';
+
+const DEFAULT_ZAKAT_CATEGORIES = [
+  'Zakat Fitrah (uang)',
+  'Zakat Fitrah (beras)',
+  'Zakat Mal',
+  'Qurban Sapi (1/7)',
+  'Qurban Kambing',
+  'Penyaluran',
+];
 
 export default function ZakatPage() {
   const [dataZakat, setDataZakat] = useState<ZakatQurbanItem[]>([]);
+  const [kategoriZakat, setKategoriZakat] = useState<KategoriItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modals
@@ -60,8 +70,15 @@ export default function ZakatPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const items = await DataService.getZakatQurban();
+      const [items, categories] = await Promise.all([
+        DataService.getZakatQurban(),
+        DataService.getKategori('zakat'),
+      ]);
       setDataZakat(items);
+      const activeCats = categories.filter((k) => k.is_active !== false);
+      if (activeCats.length > 0) {
+        setKategoriZakat(activeCats);
+      }
     } catch (error) {
       console.error('Failed to load zakat:', error);
     } finally {
@@ -75,7 +92,51 @@ export default function ZakatPage() {
       tanggal: new Date().toISOString().split('T')[0],
     }));
     loadData();
+
+    const handleKategoriUpdate = () => {
+      DataService.getKategori('zakat').then((cats) => {
+        const activeCats = cats.filter((k) => k.is_active !== false);
+        if (activeCats.length > 0) setKategoriZakat(activeCats);
+      });
+    };
+    window.addEventListener('masjid_kategori_updated', handleKategoriUpdate);
+    return () => window.removeEventListener('masjid_kategori_updated', handleKategoriUpdate);
   }, []);
+
+  const zakatOptions = useMemo(() => {
+    if (kategoriZakat.length > 0) {
+      return kategoriZakat.map((k) => k.nama);
+    }
+    return DEFAULT_ZAKAT_CATEGORIES;
+  }, [kategoriZakat]);
+
+  const dropdownZakatOptions: DropdownOption[] = useMemo(() => {
+    return zakatOptions.map((opt) => ({
+      value: opt,
+      label: opt,
+    }));
+  }, [zakatOptions]);
+
+  const editDropdownZakatOptions: DropdownOption[] = useMemo(() => {
+    if (!editItem) return dropdownZakatOptions;
+    if (!zakatOptions.includes(editItem.jenis) && editItem.jenis) {
+      return [
+        ...dropdownZakatOptions,
+        {
+          value: editItem.jenis,
+          label: editItem.jenis,
+        },
+      ];
+    }
+    return dropdownZakatOptions;
+  }, [dropdownZakatOptions, editItem, zakatOptions]);
+
+  const dropdownFilterZakatOptions: DropdownOption[] = useMemo(() => {
+    return [
+      { value: 'all', label: 'Semua Jenis Transaksi' },
+      ...dropdownZakatOptions,
+    ];
+  }, [dropdownZakatOptions]);
 
   // Filtered
   const filteredZakat = useMemo(() => {
@@ -440,20 +501,13 @@ export default function ZakatPage() {
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <select
+          <div className="flex items-center gap-2 w-full md:w-56">
+            <CustomDropdown
               value={filterJenis}
-              onChange={(e) => setFilterJenis(e.target.value)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="all">Semua Jenis Transaksi</option>
-              <option value="Zakat Fitrah (uang)">Zakat Fitrah (uang)</option>
-              <option value="Zakat Fitrah (beras)">Zakat Fitrah (beras)</option>
-              <option value="Zakat Mal">Zakat Mal</option>
-              <option value="Qurban Sapi (1/7)">Qurban Sapi (1/7)</option>
-              <option value="Qurban Kambing">Qurban Kambing</option>
-              <option value="Penyaluran">Penyaluran Mustahiq</option>
-            </select>
+              onChange={(val) => setFilterJenis(val)}
+              options={dropdownFilterZakatOptions}
+              className="w-full"
+            />
           </div>
         </div>
 
@@ -640,19 +694,14 @@ export default function ZakatPage() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Jenis Transaksi *</label>
-                  <select
+                  <CustomDropdown
+                    label="Jenis Transaksi"
+                    required
                     value={formData.jenis}
-                    onChange={(e) => handleJenisChange(e.target.value as JenisZakat)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-emerald-950"
-                  >
-                    <option value="Zakat Fitrah (uang)">Zakat Fitrah (uang)</option>
-                    <option value="Zakat Fitrah (beras)">Zakat Fitrah (beras)</option>
-                    <option value="Zakat Mal">Zakat Mal (Harta)</option>
-                    <option value="Qurban Sapi (1/7)">Qurban Sapi (1/7 Bagian)</option>
-                    <option value="Qurban Kambing">Qurban Kambing (1 Ekor)</option>
-                    <option value="Penyaluran">Penyaluran Mustahiq</option>
-                  </select>
+                    onChange={(val) => handleJenisChange(val as JenisZakat)}
+                    options={dropdownZakatOptions}
+                    placeholder="Pilih jenis transaksi zakat/qurban..."
+                  />
                 </div>
 
                 {/* FORM FIELDS SESUAI JENIS TRANSAKSI */}
@@ -949,19 +998,14 @@ export default function ZakatPage() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Jenis Transaksi *</label>
-                  <select
+                  <CustomDropdown
+                    label="Jenis Transaksi"
+                    required
                     value={editItem.jenis}
-                    onChange={(e) => handleEditJenisChange(e.target.value as JenisZakat)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-emerald-950"
-                  >
-                    <option value="Zakat Fitrah (uang)">Zakat Fitrah (uang)</option>
-                    <option value="Zakat Fitrah (beras)">Zakat Fitrah (beras)</option>
-                    <option value="Zakat Mal">Zakat Mal (Harta)</option>
-                    <option value="Qurban Sapi (1/7)">Qurban Sapi (1/7 Bagian)</option>
-                    <option value="Qurban Kambing">Qurban Kambing (1 Ekor)</option>
-                    <option value="Penyaluran">Penyaluran Mustahiq</option>
-                  </select>
+                    onChange={(val) => handleEditJenisChange(val as JenisZakat)}
+                    options={editDropdownZakatOptions}
+                    placeholder="Pilih jenis transaksi zakat/qurban..."
+                  />
                 </div>
 
                 {/* FORM FIELDS SESUAI JENIS TRANSAKSI EDIT */}

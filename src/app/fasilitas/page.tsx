@@ -20,7 +20,6 @@ import {
   Info,
   Maximize2,
   X,
-  Sparkles,
   Eye,
   RefreshCw,
   Building2,
@@ -30,6 +29,7 @@ import {
 import * as XLSX from 'xlsx';
 import { getHijriDateString } from '@/lib/hijri';
 import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
+import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 import { DataService } from '@/lib/data-service';
 import { InventoryItem, WakafItem, IdentitasMasjid } from '@/types';
 
@@ -106,6 +106,23 @@ export default function FasilitasDetailPage() {
     const list = Array.from(new Set(inventories.map((i) => i.lokasi)));
     return list.sort();
   }, [inventories]);
+
+  const dropdownKondisiOptions: DropdownOption[] = [
+    { value: 'all', label: 'Semua Kondisi Fisik' },
+    { value: 'baik', label: 'Baik / Prima' },
+    { value: 'rusak_ringan', label: 'Rusak Ringan' },
+    { value: 'rusak_berat', label: 'Rusak Berat' },
+  ];
+
+  const dropdownLokasiOptions: DropdownOption[] = useMemo(() => {
+    return [
+      { value: 'all', label: 'Semua Area Penempatan' },
+      ...uniqueLokasiList.map((lok) => ({
+        value: lok,
+        label: lok,
+      })),
+    ];
+  }, [uniqueLokasiList]);
 
   // Stats
   const totalUnits = useMemo(() => {
@@ -378,32 +395,22 @@ export default function FasilitasDetailPage() {
 
               {/* Filter Kondisi */}
               <div className="md:col-span-3">
-                <select
+                <CustomDropdown
                   value={selectedKondisi}
-                  onChange={(e) => setSelectedKondisi(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-[#0d8a5e] transition-colors"
-                >
-                  <option value="all">Semua Kondisi Fisik</option>
-                  <option value="baik">Kondisi: Baik / Prima</option>
-                  <option value="rusak_ringan">Kondisi: Rusak Ringan</option>
-                  <option value="rusak_berat">Kondisi: Rusak Berat</option>
-                </select>
+                  onChange={(val) => setSelectedKondisi(val)}
+                  options={dropdownKondisiOptions}
+                  className="w-full"
+                />
               </div>
 
               {/* Filter Lokasi */}
               <div className="md:col-span-3">
-                <select
+                <CustomDropdown
                   value={selectedLokasi}
-                  onChange={(e) => setSelectedLokasi(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-[#0d8a5e] transition-colors"
-                >
-                  <option value="all">Semua Area Penempatan</option>
-                  {uniqueLokasiList.map((lok) => (
-                    <option key={lok} value={lok}>
-                      {lok}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setSelectedLokasi(val)}
+                  options={dropdownLokasiOptions}
+                  className="w-full"
+                />
               </div>
             </div>
 

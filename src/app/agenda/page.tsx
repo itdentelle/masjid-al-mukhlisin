@@ -9,7 +9,6 @@ import {
   ArrowLeft,
   Shield,
   MapPin,
-  Sparkles,
   UserCheck,
   X,
   Share2,
@@ -20,7 +19,7 @@ import {
 import { DataService } from '@/lib/data-service';
 import { getHijriDateString } from '@/lib/hijri';
 import { getOfficialPrayerTimes } from '@/lib/prayer-service';
-import { KhutbahItem, PetugasJumatItem, IdentitasMasjid } from '@/types';
+import { KhutbahItem, PetugasJumatItem, IdentitasMasjid, KategoriItem } from '@/types';
 import KhutbahDefaultPoster, { isCustomPosterImage } from '@/components/khutbah-default-poster';
 import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
 
@@ -28,6 +27,7 @@ export default function AgendaPublicPage() {
   const [khutbahList, setKhutbahList] = useState<KhutbahItem[]>([]);
   const [petugasJumat, setPetugasJumat] = useState<PetugasJumatItem[]>([]);
   const [identitas, setIdentitas] = useState<IdentitasMasjid | null>(null);
+  const [kategoriAgenda, setKategoriAgenda] = useState<KategoriItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Jadwal Shalat
@@ -52,14 +52,17 @@ export default function AgendaPublicPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [khutbahRes, petugasRes, idRes] = await Promise.all([
+      const [khutbahRes, petugasRes, idRes, catRes] = await Promise.all([
         DataService.getKhutbahs(),
         DataService.getPetugasJumat(),
         DataService.getIdentitas(),
+        DataService.getKategori('agenda'),
       ]);
       setKhutbahList(khutbahRes);
       setPetugasJumat(petugasRes);
       setIdentitas(idRes);
+      const activeCats = catRes.filter((k) => k.is_active !== false);
+      if (activeCats.length > 0) setKategoriAgenda(activeCats);
     } catch (err) {
       console.error('Failed to load agenda data:', err);
     } finally {
@@ -69,6 +72,14 @@ export default function AgendaPublicPage() {
 
   useEffect(() => {
     loadData();
+
+    const handleKategoriUpdated = () => {
+      DataService.getKategori('agenda').then((cats) => {
+        const activeCats = cats.filter((k) => k.is_active !== false);
+        if (activeCats.length > 0) setKategoriAgenda(activeCats);
+      });
+    };
+    window.addEventListener('masjid_kategori_updated', handleKategoriUpdated);
 
     const now = new Date();
     setTodayDateStr(
@@ -89,7 +100,28 @@ export default function AgendaPublicPage() {
       .catch((err) => {
         console.warn('API Shalat fallback active:', err);
       });
+
+    return () => {
+      window.removeEventListener('masjid_kategori_updated', handleKategoriUpdated);
+    };
   }, []);
+
+  const agendaPillOptions = useMemo(() => {
+    if (kategoriAgenda.length > 0) {
+      return [
+        { id: 'all', label: 'Semua Agenda' },
+        ...kategoriAgenda.map((k) => ({ id: k.nama, label: k.nama })),
+      ];
+    }
+    return [
+      { id: 'all', label: 'Semua Agenda' },
+      { id: 'Shalat Jumat', label: 'Shalat Jumat' },
+      { id: 'Kajian Ahad Subuh', label: 'Kajian Ahad Subuh' },
+      { id: 'Tabligh Akbar', label: 'Tabligh Akbar' },
+      { id: 'Kajian Muslimah', label: 'Kajian Muslimah' },
+      { id: 'Kajian Remaja', label: 'Kajian Remaja' },
+    ];
+  }, [kategoriAgenda]);
 
   // Filtered Kajian
   const filteredKajian = useMemo(() => {
@@ -169,7 +201,6 @@ export default function AgendaPublicPage() {
       <section className="relative overflow-hidden bg-gradient-to-b from-[#0a1f18] via-[#0d2a21] to-[#081a14] pt-10 pb-10 sm:pb-12 px-4 sm:px-6 md:px-8 text-white">
         <div className="mx-auto max-w-7xl">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-900/60 px-3.5 py-1 text-[10px] font-black tracking-widest text-emerald-300 uppercase">
-            <Sparkles size={12} />
             <span>JADWAL SHALAT & MAJELIS ILMU · MASJID AL-MUKHLISIN</span>
           </div>
           <h1 className="font-serif-elegant text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white">
@@ -332,12 +363,7 @@ export default function AgendaPublicPage() {
 
           {/* Filter Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-            {[
-              { id: 'all', label: 'Semua Agenda' },
-              { id: 'Khutbah Jumat', label: 'Khutbah Jumat' },
-              { id: 'Kajian Rutin', label: 'Kajian Rutin' },
-              { id: 'Tabligh Akbar', label: 'Tabligh Akbar / PHBI' },
-            ].map((kategori) => (
+            {agendaPillOptions.map((kategori) => (
               <button
                 key={kategori.id}
                 onClick={() => setSelectedKategori(kategori.id)}
@@ -410,6 +436,7 @@ export default function AgendaPublicPage() {
                             day: 'numeric',
                             month: 'short',
                           })}
+                          waktu={item.waktu}
                           className="h-full w-full"
                         />
                       )}
@@ -418,16 +445,24 @@ export default function AgendaPublicPage() {
                   {/* Body Info */}
                   <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
                     <div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 font-bold mb-1">
-                        <Calendar size={13} />
-                        <span>
-                          {new Date(item.tanggal).toLocaleDateString('id-ID', {
-                            weekday: 'long',
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
+                      <div className="flex flex-wrap items-center gap-y-1 gap-x-2 text-[11px] text-emerald-700 font-bold mb-1">
+                        <span className="flex items-center gap-1.5">
+                          <Calendar size={13} />
+                          <span>
+                            {new Date(item.tanggal).toLocaleDateString('id-ID', {
+                              weekday: 'long',
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            })}
+                          </span>
                         </span>
+                        {item.waktu && (
+                          <span className="flex items-center gap-1 text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md font-mono text-[10px]">
+                            <Clock size={11} className="text-emerald-700" />
+                            <span>{item.waktu} WIB</span>
+                          </span>
+                        )}
                       </div>
                       <h3 className="font-bold text-sm sm:text-base text-slate-800 group-hover:text-emerald-800 transition-colors line-clamp-2">
                         {item.tema}
@@ -482,6 +517,7 @@ export default function AgendaPublicPage() {
                     month: 'long',
                     year: 'numeric',
                   })}
+                  waktu={selectedItem.waktu}
                   className="h-full w-full"
                 />
               )}
@@ -516,6 +552,14 @@ export default function AgendaPublicPage() {
                     })}
                   </span>
                 </div>
+                {selectedItem.waktu && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Waktu / Pukul</span>
+                    <span className="font-bold text-emerald-800 font-mono">
+                      {selectedItem.waktu} WIB
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Tempat</span>
                   <span className="font-bold text-slate-800">

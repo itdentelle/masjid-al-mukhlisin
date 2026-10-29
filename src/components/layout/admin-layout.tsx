@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -22,6 +22,7 @@ import {
   Settings,
   MapPin,
   MessageSquareHeart,
+  Tags,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { DataService } from '@/lib/data-service';
@@ -38,6 +39,82 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [identitas, setIdentitas] = useState<IdentitasMasjid | null>(null);
   const [unreadSaran, setUnreadSaran] = useState(0);
+  const [navTheme, setNavTheme] = useState<'dark' | 'light'>('dark');
+  const mobileNavRef = useRef<HTMLElement>(null);
+
+  // Dynamic Theme Detection:
+  // "kalo bawahnya item jadi putih, kalo bawah putih jadi item"
+  useEffect(() => {
+    let ticking = false;
+
+    const detectUnderlyingTheme = () => {
+      if (!mobileNavRef.current) return;
+      const navEl = mobileNavRef.current;
+      const rect = navEl.getBoundingClientRect();
+      const checkX = window.innerWidth / 2;
+      // Sample 15px above the bottom bar top edge
+      const checkY = Math.max(10, rect.top - 15);
+
+      if (typeof document === 'undefined' || typeof document.elementsFromPoint !== 'function') return;
+
+      const elements = document.elementsFromPoint(checkX, checkY);
+      const target = elements.find(
+        (el) => !navEl.contains(el) && el !== document.body && el !== document.documentElement
+      );
+
+      let isDark = false;
+      let curr = target as HTMLElement | null;
+
+      while (curr && curr !== document.body && curr !== document.documentElement) {
+        if (curr.getAttribute('data-theme') === 'dark') {
+          isDark = true;
+          break;
+        }
+        if (curr.getAttribute('data-theme') === 'light') {
+          isDark = false;
+          break;
+        }
+
+        const bg = window.getComputedStyle(curr).backgroundColor;
+        if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
+          const match = bg.match(/\d+(\.\d+)?/g);
+          if (match && match.length >= 3) {
+            const r = parseFloat(match[0]);
+            const g = parseFloat(match[1]);
+            const b = parseFloat(match[2]);
+            const a = match[3] !== undefined ? parseFloat(match[3]) : 1;
+            if (a > 0.25) {
+              const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+              isDark = luminance < 140;
+              break;
+            }
+          }
+        }
+        curr = curr.parentElement;
+      }
+
+      // If background underneath is dark -> navbar becomes white (light)
+      // If background underneath is white/light -> navbar becomes dark
+      setNavTheme(isDark ? 'light' : 'dark');
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(detectUnderlyingTheme);
+        ticking = true;
+      }
+    };
+
+    detectUnderlyingTheme();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     let isMounted = true;
@@ -93,6 +170,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { title: 'Jadwal Petugas Jumat', href: '/admin/petugas-jumat', icon: UserCheck },
     { title: 'Khutbah & Kajian', href: '/admin/khutbah', icon: CalendarDays },
     { title: 'Inventaris & Wakaf', href: '/admin/inventory', icon: Package },
+    { title: 'Master Kategori', href: '/admin/kategori', icon: Tags },
     { title: 'Laporan Resmi (SIMAS)', href: '/admin/laporan', icon: FileText },
     { title: 'Pengaturan & Backup', href: '/admin/pengaturan', icon: Settings },
   ];
@@ -175,17 +253,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
 
           {/* Database Connection Status Badge */}
-          <div className="rounded-2xl bg-emerald-950/60 border border-emerald-800/40 p-3.5 space-y-2.5">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Database size={13} className="text-emerald-400" /> Database Backend
-                </span>
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              </div>
-              <p className="text-[11px] font-bold text-emerald-300">
-                {isSupabaseConnected ? 'Database Cloud Terhubung' : 'Database Aktif & Terlindungi'}
-              </p>
+          <div className="rounded-2xl bg-emerald-950/60 border border-emerald-800/40 p-3.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Database size={13} className="text-emerald-400" /> Database Backend
+              </span>
+              <span
+                className="relative flex h-2 w-2"
+                title={isSupabaseConnected ? 'Database Cloud Terhubung' : 'Database Aktif & Terlindungi'}
+              >
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+              </span>
             </div>
 
             {/* Identitas SIMAS & Alamat */}
@@ -269,9 +348,170 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* Main Page Area */}
-      <main className="flex-1 min-w-0 bg-[#f8fafc] overflow-y-auto pb-8 md:pb-0">
+      <main className="flex-1 min-w-0 bg-[#f8fafc] overflow-y-auto pb-28 md:pb-8">
         {children}
       </main>
+
+      {/* Mobile Adaptive Dynamic Contrast Bottom Navigation */}
+      <nav
+        ref={mobileNavRef}
+        aria-label="Navigasi Bawah Mobile Admin"
+        className={`fixed bottom-0 left-0 right-0 z-40 md:hidden transition-colors duration-300 pb-[calc(env(safe-area-inset-bottom,8px)+8px)] pt-2 ${
+          navTheme === 'light'
+            ? 'bg-white/95 backdrop-blur-xl border-t border-slate-200/90 shadow-[0_-8px_30px_rgba(0,0,0,0.22)]'
+            : 'bg-[#0a1f18]/95 backdrop-blur-xl border-t border-emerald-500/20 shadow-[0_-8px_30px_rgba(0,0,0,0.45)]'
+        }`}
+      >
+        {/* Subtle glowing accent line on top */}
+        <div
+          className={`absolute top-0 left-0 right-0 h-[1.5px] pointer-events-none transition-opacity duration-300 ${
+            navTheme === 'light'
+              ? 'bg-gradient-to-r from-transparent via-emerald-600/30 to-transparent'
+              : 'bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent'
+          }`}
+        />
+
+        <div className="grid grid-cols-5 items-center max-w-md mx-auto px-1 gap-1">
+          {[
+            { title: 'Beranda', href: '/admin/dashboard', icon: LayoutDashboard },
+            { title: 'Kas', href: '/admin/finance', icon: Wallet },
+            { title: 'Zakat', href: '/admin/zakat', icon: HandHeart },
+            { title: 'Saran', href: '/admin/saran', icon: MessageSquareHeart, badge: unreadSaran },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = pathname === tab.href;
+
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className={`relative flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all duration-150 active:scale-95 ${
+                  isActive
+                    ? navTheme === 'light'
+                      ? 'text-emerald-800'
+                      : 'text-white'
+                    : navTheme === 'light'
+                      ? 'text-slate-600 hover:text-slate-900'
+                      : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                {/* Active Indicator Pip */}
+                {isActive && (
+                  <span
+                    className={`absolute -top-1.5 w-6 h-1 rounded-full transition-colors duration-300 ${
+                      navTheme === 'light'
+                        ? 'bg-emerald-600 shadow-[0_0_8px_rgba(5,150,105,0.7)]'
+                        : 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]'
+                    }`}
+                  />
+                )}
+
+                <div
+                  className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl transition-all duration-200 ${
+                    isActive
+                      ? navTheme === 'light'
+                        ? 'bg-emerald-100/90 text-emerald-800 shadow-sm ring-1 ring-emerald-500/30'
+                        : 'bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-md shadow-emerald-950/50 ring-1 ring-emerald-300/40'
+                      : navTheme === 'light'
+                        ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Icon
+                    size={20}
+                    className={
+                      isActive
+                        ? navTheme === 'light'
+                          ? 'text-emerald-800 stroke-[2.3]'
+                          : 'text-white stroke-[2.3]'
+                        : navTheme === 'light'
+                          ? 'text-slate-600'
+                          : 'text-slate-300'
+                    }
+                  />
+                </div>
+                <span
+                  className={`text-[11px] tracking-tight mt-1 truncate w-full text-center transition-colors duration-200 ${
+                    isActive
+                      ? navTheme === 'light'
+                        ? 'text-emerald-800 font-extrabold'
+                        : 'text-emerald-300 font-bold'
+                      : navTheme === 'light'
+                        ? 'text-slate-600 font-medium'
+                        : 'text-slate-300 font-medium'
+                  }`}
+                >
+                  {tab.title}
+                </span>
+                {tab.badge !== undefined && tab.badge > 0 && (
+                  <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-emerald-950 animate-pulse" />
+                )}
+              </Link>
+            );
+          })}
+
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className={`relative flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all duration-150 active:scale-95 ${
+              sidebarOpen
+                ? navTheme === 'light'
+                  ? 'text-emerald-800'
+                  : 'text-white'
+                : navTheme === 'light'
+                  ? 'text-slate-600 hover:text-slate-900'
+                  : 'text-slate-300 hover:text-white'
+            }`}
+          >
+            {sidebarOpen && (
+              <span
+                className={`absolute -top-1.5 w-6 h-1 rounded-full transition-colors duration-300 ${
+                  navTheme === 'light'
+                    ? 'bg-emerald-600 shadow-[0_0_8px_rgba(5,150,105,0.7)]'
+                    : 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]'
+                }`}
+              />
+            )}
+            <div
+              className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl transition-all duration-200 ${
+                sidebarOpen
+                  ? navTheme === 'light'
+                    ? 'bg-emerald-100/90 text-emerald-800 shadow-sm ring-1 ring-emerald-500/30'
+                    : 'bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-md shadow-emerald-950/50 ring-1 ring-emerald-300/40'
+                  : navTheme === 'light'
+                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Menu
+                size={20}
+                className={
+                  sidebarOpen
+                    ? navTheme === 'light'
+                      ? 'text-emerald-800 stroke-[2.3]'
+                      : 'text-white stroke-[2.3]'
+                    : navTheme === 'light'
+                      ? 'text-slate-600'
+                      : 'text-slate-300'
+                }
+              />
+            </div>
+            <span
+              className={`text-[11px] tracking-tight mt-1 truncate w-full text-center transition-colors duration-200 ${
+                sidebarOpen
+                  ? navTheme === 'light'
+                    ? 'text-emerald-800 font-extrabold'
+                    : 'text-emerald-300 font-bold'
+                  : navTheme === 'light'
+                    ? 'text-slate-600 font-medium'
+                    : 'text-slate-300 font-medium'
+              }`}
+            >
+              Menu
+            </span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import * as XLSX from 'xlsx';
 import {
   CalendarDays,
@@ -13,15 +14,27 @@ import {
   X,
   Upload,
   Image as ImageIcon,
-  ExternalLink,
+  Info,
+  Mic,
 } from 'lucide-react';
 import AdminLayout from '@/components/layout/admin-layout';
 import KhutbahDefaultPoster, { isCustomPosterImage } from '@/components/khutbah-default-poster';
+import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 import { DataService } from '@/lib/data-service';
-import { KhutbahItem, StatusKhutbah } from '@/types';
+import { KhutbahItem, StatusKhutbah, KategoriItem, JamaahItem } from '@/types';
+
+const DEFAULT_AGENDA_CATEGORIES = [
+  'Shalat Jumat',
+  'Kajian Ahad Subuh',
+  'Tabligh Akbar',
+  'Kajian Muslimah',
+  'Kajian Remaja',
+];
 
 export default function KhutbahPage() {
   const [dataJadwal, setDataJadwal] = useState<KhutbahItem[]>([]);
+  const [kategoriAgenda, setKategoriAgenda] = useState<KategoriItem[]>([]);
+  const [dataJamaah, setDataJamaah] = useState<JamaahItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modals
@@ -33,11 +46,15 @@ export default function KhutbahPage() {
   const [filterKategori, setFilterKategori] = useState<string>('all');
   const [selectedIds, setSelectedIds] = useState<(number | string)[]>([]);
 
+  // Mode Input Khotib ('select' dari Data Jamaah atau 'manual' ustadz luar)
+  const [inputModeKhotib, setInputModeKhotib] = useState<'select' | 'manual'>('select');
+
   // File & Form
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [formData, setFormData] = useState({
     tanggal: '',
+    waktu: '11:45',
     jenis_kegiatan: 'Shalat Jumat',
     khotib: '',
     tema: '',
@@ -48,8 +65,17 @@ export default function KhutbahPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const items = await DataService.getKhutbahs();
+      const [items, categories, jamaahList] = await Promise.all([
+        DataService.getKhutbahs(),
+        DataService.getKategori('agenda'),
+        DataService.getJamaah(),
+      ]);
       setDataJadwal(items);
+      const activeCats = categories.filter((k) => k.is_active !== false);
+      if (activeCats.length > 0) {
+        setKategoriAgenda(activeCats);
+      }
+      setDataJamaah(jamaahList);
     } catch (error) {
       console.error('Failed to load khutbahs:', error);
     } finally {
@@ -59,7 +85,100 @@ export default function KhutbahPage() {
 
   useEffect(() => {
     loadData();
+
+    const handleKategoriUpdate = () => {
+      DataService.getKategori('agenda').then((cats) => {
+        const activeCats = cats.filter((k) => k.is_active !== false);
+        if (activeCats.length > 0) setKategoriAgenda(activeCats);
+      });
+    };
+    window.addEventListener('masjid_kategori_updated', handleKategoriUpdate);
+    return () => window.removeEventListener('masjid_kategori_updated', handleKategoriUpdate);
   }, []);
+
+  const agendaOptions = useMemo(() => {
+    if (kategoriAgenda.length > 0) {
+      return kategoriAgenda.map((k) => k.nama);
+    }
+    return DEFAULT_AGENDA_CATEGORIES;
+  }, [kategoriAgenda]);
+
+  // Kandidat Khotib & Penceramah murni dari Data Jamaah
+  const kandidatImam = useMemo(() => {
+    return dataJamaah.filter((j) => j.peran === 'Imam');
+  }, [dataJamaah]);
+
+  const kandidatDkm = useMemo(() => {
+    return dataJamaah.filter((j) => j.peran === 'Pengurus DKM');
+  }, [dataJamaah]);
+
+  const jamaahLainnya = useMemo(() => {
+    return dataJamaah.filter((j) => j.peran !== 'Imam' && j.peran !== 'Pengurus DKM');
+  }, [dataJamaah]);
+
+  const allJamaahNames = useMemo(() => {
+    return dataJamaah.map((j) => j.nama).filter(Boolean);
+  }, [dataJamaah]);
+
+  const dropdownAgendaOptions: DropdownOption[] = useMemo(() => {
+    return agendaOptions.map((opt) => ({
+      value: opt,
+      label: opt,
+    }));
+  }, [agendaOptions]);
+
+  const dropdownStatusOptions: DropdownOption[] = [
+    { value: 'terjadwal', label: 'Terjadwal' },
+    { value: 'selesai', label: 'Selesai' },
+    { value: 'batal', label: 'Batal' },
+  ];
+
+  const dropdownKhotibOptions: DropdownOption[] = useMemo(() => {
+    const opts: DropdownOption[] = [];
+
+    if (kandidatImam.length > 0) {
+      kandidatImam.forEach((j) => {
+        opts.push({
+          value: j.nama,
+          label: j.nama,
+          group: 'Imam Masjid (Peran: Imam)',
+        });
+      });
+    }
+
+    if (kandidatDkm.length > 0) {
+      kandidatDkm.forEach((j) => {
+        opts.push({
+          value: j.nama,
+          label: j.nama,
+          group: 'Pengurus DKM',
+        });
+      });
+    }
+
+    if (jamaahLainnya.length > 0) {
+      jamaahLainnya.forEach((j) => {
+        opts.push({
+          value: j.nama,
+          label: `${j.nama} (${j.peran || 'Jamaah'})`,
+          group: 'Warga Jamaah Lainnya',
+        });
+      });
+    }
+
+    if (
+      formData.khotib &&
+      !allJamaahNames.some((n) => n.toLowerCase() === formData.khotib.toLowerCase())
+    ) {
+      opts.unshift({
+        value: formData.khotib,
+        label: `${formData.khotib} (Tamu Luar)`,
+        group: 'Penceramah Terpilih',
+      });
+    }
+
+    return opts;
+  }, [kandidatImam, kandidatDkm, jamaahLainnya, formData.khotib, allJamaahNames]);
 
   // Filtered
   const filteredJadwal = useMemo(() => {
@@ -90,6 +209,7 @@ export default function KhutbahPage() {
     const ws = XLSX.utils.json_to_sheet(
       target.map((i) => ({
         Tanggal: i.tanggal,
+        Waktu: i.waktu ? `${i.waktu} WIB` : '-',
         Kegiatan: i.jenis_kegiatan,
         Penceramah: i.khotib,
         Tema: i.tema || '-',
@@ -136,6 +256,7 @@ export default function KhutbahPage() {
       setImagePreview('');
       setFormData({
         tanggal: '',
+        waktu: '11:45',
         jenis_kegiatan: 'Shalat Jumat',
         khotib: '',
         tema: '',
@@ -181,8 +302,10 @@ export default function KhutbahPage() {
             </button>
             <button
               onClick={() => {
+                setInputModeKhotib('select');
                 setFormData({
                   tanggal: new Date().toISOString().split('T')[0],
+                  waktu: '11:45',
                   jenis_kegiatan: 'Shalat Jumat',
                   khotib: '',
                   tema: '',
@@ -244,12 +367,12 @@ export default function KhutbahPage() {
         </div>
 
         {/* Data Table */}
-        <div className="rounded-[2.5rem] border border-slate-100 bg-white overflow-hidden shadow-xs">
+        <div className="rounded-2xl sm:rounded-[2.5rem] border border-slate-100 bg-white overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-100 text-[9px] font-black tracking-widest text-slate-400 uppercase">
                 <tr>
-                  <th className="px-6 py-4">
+                  <th className="px-3.5 sm:px-6 py-3.5 sm:py-4">
                     <input
                       type="checkbox"
                       className="rounded text-emerald-600 focus:ring-emerald-500"
@@ -257,12 +380,12 @@ export default function KhutbahPage() {
                       checked={selectedIds.length === filteredJadwal.length && filteredJadwal.length > 0}
                     />
                   </th>
-                  <th className="px-6 py-4">Poster</th>
-                  <th className="px-6 py-4">Tanggal & Kegiatan</th>
-                  <th className="px-6 py-4">Khotib / Penceramah</th>
-                  <th className="px-6 py-4">Tema Kajian</th>
-                  <th className="px-6 py-4 text-center">Status</th>
-                  <th className="px-6 py-4 text-center">Aksi</th>
+                  <th className="px-3.5 sm:px-6 py-3.5 sm:py-4">Poster</th>
+                  <th className="px-3.5 sm:px-6 py-3.5 sm:py-4">Tanggal & Kegiatan</th>
+                  <th className="px-3.5 sm:px-6 py-3.5 sm:py-4">Khotib / Penceramah</th>
+                  <th className="px-3.5 sm:px-6 py-3.5 sm:py-4">Tema Kajian</th>
+                  <th className="px-3.5 sm:px-6 py-3.5 sm:py-4 text-center">Status</th>
+                  <th className="px-3.5 sm:px-6 py-3.5 sm:py-4 text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -271,7 +394,7 @@ export default function KhutbahPage() {
                     const isSelected = selectedIds.includes(item.id);
                     return (
                       <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="px-6 py-4">
+                        <td className="px-3.5 sm:px-6 py-3 sm:py-4">
                           <input
                             type="checkbox"
                             className="rounded text-emerald-600 focus:ring-emerald-500"
@@ -279,8 +402,8 @@ export default function KhutbahPage() {
                             onChange={() => toggleSelectRow(item.id)}
                           />
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="h-12 w-12 rounded-xl overflow-hidden border border-emerald-900/15 shrink-0 shadow-xs">
+                        <td className="px-3.5 sm:px-6 py-3 sm:py-4">
+                          <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl overflow-hidden border border-emerald-900/15 shrink-0 shadow-xs">
                             {isCustomPosterImage(item.image) ? (
                               <img
                                 src={item.image!}
@@ -296,15 +419,23 @@ export default function KhutbahPage() {
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <p className="font-bold text-slate-900">{item.jenis_kegiatan}</p>
-                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">{item.tanggal}</p>
+                        <td className="px-3.5 sm:px-6 py-3 sm:py-4">
+                          <p className="font-bold text-slate-900 whitespace-nowrap">{item.jenis_kegiatan}</p>
+                          <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-mono mt-0.5 whitespace-nowrap">
+                            <span>{item.tanggal}</span>
+                            {item.waktu && (
+                              <>
+                                <span>•</span>
+                                <span className="text-emerald-700 font-bold">{item.waktu} WIB</span>
+                              </>
+                            )}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 font-bold text-emerald-950">{item.khotib}</td>
-                        <td className="px-6 py-4 max-w-xs truncate text-slate-500 italic">
+                        <td className="px-3.5 sm:px-6 py-3 sm:py-4 font-bold text-emerald-950 whitespace-nowrap">{item.khotib}</td>
+                        <td className="px-3.5 sm:px-6 py-3 sm:py-4 max-w-xs truncate text-slate-500 italic">
                           "{item.tema || 'Belum diisi'}"
                         </td>
-                        <td className="px-6 py-4 text-center">
+                        <td className="px-3.5 sm:px-6 py-3 sm:py-4 text-center">
                           <span
                             className={`inline-block px-2.5 py-1 rounded-md text-[9px] font-black uppercase ${
                               item.status === 'terjadwal'
@@ -317,7 +448,7 @@ export default function KhutbahPage() {
                             {item.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-center">
+                        <td className="px-3.5 sm:px-6 py-3 sm:py-4 text-center">
                           <div className="flex items-center justify-center gap-2 text-slate-400">
                             <button
                               onClick={() => {
@@ -331,9 +462,15 @@ export default function KhutbahPage() {
                             </button>
                             <button
                               onClick={() => {
+                                const khotibVal = (item.khotib || '').trim();
+                                const isFromJamaah = allJamaahNames.some(
+                                  (n) => n.toLowerCase() === khotibVal.toLowerCase()
+                                );
+                                setInputModeKhotib(isFromJamaah ? 'select' : 'manual');
                                 setSelectedItem(item);
                                 setFormData({
                                   tanggal: item.tanggal,
+                                  waktu: item.waktu || '11:45',
                                   jenis_kegiatan: item.jenis_kegiatan,
                                   khotib: item.khotib,
                                   tema: item.tema || '',
@@ -404,34 +541,80 @@ export default function KhutbahPage() {
 
                   <div>
                     <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-1">
-                      Jenis Kegiatan
+                      Jam / Waktu (WIB)
                     </label>
-                    <select
-                      className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-3 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900"
-                      value={formData.jenis_kegiatan}
-                      onChange={(e) => setFormData({ ...formData, jenis_kegiatan: e.target.value })}
-                    >
-                      <option value="Shalat Jumat">Shalat Jumat</option>
-                      <option value="Kajian Ahad Subuh">Kajian Ahad Subuh</option>
-                      <option value="Tabligh Akbar">Tabligh Akbar</option>
-                      <option value="Kajian Muslimah">Kajian Muslimah</option>
-                      <option value="Kajian Remaja">Kajian Remaja</option>
-                    </select>
+                    <input
+                      type="time"
+                      required
+                      className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-3 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900 font-mono cursor-pointer"
+                      value={formData.waktu}
+                      onChange={(e) => setFormData({ ...formData, waktu: e.target.value })}
+                    />
                   </div>
                 </div>
 
+                <CustomDropdown
+                  label="Jenis Kegiatan"
+                  required
+                  value={formData.jenis_kegiatan}
+                  onChange={(val) => {
+                    let defaultTime = formData.waktu;
+                    if (val === 'Shalat Jumat') defaultTime = '11:45';
+                    else if (val.toLowerCase().includes('subuh')) defaultTime = '05:00';
+                    setFormData({ ...formData, jenis_kegiatan: val, waktu: defaultTime });
+                  }}
+                  options={dropdownAgendaOptions}
+                />
+
                 <div>
-                  <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-1">
-                    Nama Khotib / Penceramah
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: Ust. Dr. H. Ahmad Farhan, M.Ag"
-                    className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900"
-                    value={formData.khotib}
-                    onChange={(e) => setFormData({ ...formData, khotib: e.target.value })}
-                  />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-1.5">
+                      <Mic size={12} className="text-emerald-600" />
+                      <span>Nama Khotib / Penceramah</span>
+                      <span className="text-rose-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextMode = inputModeKhotib === 'select' ? 'manual' : 'select';
+                        setInputModeKhotib(nextMode);
+                      }}
+                      className="text-[10px] font-bold text-emerald-600 hover:underline"
+                    >
+                      {inputModeKhotib === 'select' ? '+ Input Manual (Ustadz Tamu Luar)' : '← Pilih dari Data Jamaah'}
+                    </button>
+                  </div>
+
+                  {inputModeKhotib === 'select' ? (
+                    <CustomDropdown
+                      value={formData.khotib}
+                      onChange={(val) => setFormData({ ...formData, khotib: val })}
+                      options={dropdownKhotibOptions}
+                      placeholder="Pilih atau cari dari Data Jamaah..."
+                      searchable={true}
+                      required={true}
+                    />
+                  ) : (
+                    <div className="space-y-1.5">
+                      <input
+                        type="text"
+                        required
+                        list="jamaah-khotib-suggestions"
+                        placeholder="Ketik nama khotib / ustadz tamu luar..."
+                        className="w-full rounded-2xl border border-slate-200/90 bg-slate-50 p-3.5 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 focus:ring-3 focus:ring-emerald-500/15 text-slate-900"
+                        value={formData.khotib}
+                        onChange={(e) => setFormData({ ...formData, khotib: e.target.value })}
+                      />
+                      <datalist id="jamaah-khotib-suggestions">
+                        {allJamaahNames.map((name) => (
+                          <option key={name} value={name} />
+                        ))}
+                      </datalist>
+                      <p className="text-[10px] text-slate-400 px-1">
+                        Pilih dari Data Jamaah di atas atau ketik langsung jika diisi oleh ustadz tamu dari luar.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -447,30 +630,24 @@ export default function KhutbahPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3 items-end">
                   <div>
-                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-1">
-                      Status Agenda
-                    </label>
-                    <select
-                      className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-3 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900 capitalize"
+                    <CustomDropdown
+                      label="Status Agenda"
                       value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as StatusKhutbah })}
-                    >
-                      <option value="terjadwal">Terjadwal</option>
-                      <option value="selesai">Selesai</option>
-                      <option value="batal">Batal</option>
-                    </select>
+                      onChange={(val) => setFormData({ ...formData, status: val as StatusKhutbah })}
+                      options={dropdownStatusOptions}
+                    />
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-1">
+                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-1.5">
                       Link Siaran (Opsional)
                     </label>
                     <input
                       type="url"
                       placeholder="https://youtube.com/..."
-                      className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-3 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900"
+                      className="w-full rounded-2xl border border-slate-200/90 bg-slate-50 p-3.5 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900"
                       value={formData.link}
                       onChange={(e) => setFormData({ ...formData, link: e.target.value })}
                     />
@@ -529,9 +706,10 @@ export default function KhutbahPage() {
                         khotib={formData.khotib}
                         tema={formData.tema}
                         tanggal={formData.tanggal}
+                        waktu={formData.waktu}
                       />
                       <div className="flex items-start gap-1.5 px-1 text-[11px] text-slate-500">
-                        <span className="text-emerald-600 text-xs shrink-0">✨</span>
+                        <Info size={14} className="text-emerald-600 shrink-0 mt-0.5" />
                         <p>
                           <strong className="text-slate-700">Tampilan Default:</strong> Jika tidak memilih file gambar, sistem otomatis menampilkan poster resmi Masjid Al-Mukhlisin di atas.
                         </p>
@@ -588,6 +766,7 @@ export default function KhutbahPage() {
                     khotib={selectedItem.khotib}
                     tema={selectedItem.tema}
                     tanggal={selectedItem.tanggal}
+                    waktu={selectedItem.waktu}
                     className="h-full w-full"
                   />
                 )}
@@ -615,6 +794,12 @@ export default function KhutbahPage() {
                     <span className="font-bold">Tanggal:</span>
                     <span className="font-mono text-slate-800">{selectedItem.tanggal}</span>
                   </div>
+                  {selectedItem.waktu && (
+                    <div className="flex justify-between">
+                      <span className="font-bold">Waktu / Pukul:</span>
+                      <span className="font-mono font-bold text-emerald-800">{selectedItem.waktu} WIB</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="font-bold">Status:</span>
                     <span className="capitalize font-bold text-emerald-700">{selectedItem.status}</span>

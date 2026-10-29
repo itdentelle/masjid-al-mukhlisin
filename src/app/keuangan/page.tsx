@@ -21,6 +21,7 @@ import { DataService } from '@/lib/data-service';
 import { getHijriDateString } from '@/lib/hijri';
 import { KasItem, IdentitasMasjid } from '@/types';
 import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
+import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 
 export default function KeuanganDetailPage() {
   const [dataKas, setDataKas] = useState<KasItem[]>([]);
@@ -128,6 +129,32 @@ export default function KeuanganDetailPage() {
     });
     return Array.from(set).sort();
   }, [dataKas]);
+
+  const dropdownTipeOptions: DropdownOption[] = [
+    { value: 'all', label: 'Semua Aliran Kas' },
+    { value: 'masuk', label: 'Pemasukan (+)', badge: { text: '+ Masuk', variant: 'emerald' } },
+    { value: 'keluar', label: 'Pengeluaran (-)', badge: { text: '- Keluar', variant: 'rose' } },
+  ];
+
+  const dropdownKategoriOptions: DropdownOption[] = useMemo(() => {
+    return [
+      { value: 'all', label: 'Semua Kategori' },
+      ...uniqueKategori.map((cat) => ({
+        value: cat,
+        label: cat,
+      })),
+    ];
+  }, [uniqueKategori]);
+
+  const dropdownBulanOptions: DropdownOption[] = useMemo(() => {
+    return [
+      { value: 'all', label: 'Semua Periode Bulan' },
+      ...uniqueMonths.map((m) => ({
+        value: m,
+        label: `Bulan ${m}`,
+      })),
+    ];
+  }, [uniqueMonths]);
 
   // Filtered Items
   const filteredKas = useMemo(() => {
@@ -566,43 +593,28 @@ export default function KeuanganDetailPage() {
             </div>
 
             {/* Filter Tipe */}
-            <select
+            <CustomDropdown
               value={selectedTipe}
-              onChange={(e) => setSelectedTipe(e.target.value as any)}
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-800 outline-none focus:border-emerald-500 focus:bg-white"
-            >
-              <option value="all">Semua Aliran (Masuk & Keluar)</option>
-              <option value="masuk">Hanya Pemasukan (+)</option>
-              <option value="keluar">Hanya Pengeluaran (-)</option>
-            </select>
+              onChange={(val) => setSelectedTipe(val as any)}
+              options={dropdownTipeOptions}
+              className="w-full md:w-56"
+            />
 
             {/* Filter Kategori */}
-            <select
+            <CustomDropdown
               value={selectedKategori}
-              onChange={(e) => setSelectedKategori(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-800 outline-none focus:border-emerald-500 focus:bg-white"
-            >
-              <option value="all">Semua Kategori</option>
-              {uniqueKategori.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedKategori(val)}
+              options={dropdownKategoriOptions}
+              className="w-full md:w-52"
+            />
 
             {/* Filter Bulan */}
-            <select
+            <CustomDropdown
               value={selectedBulan}
-              onChange={(e) => setSelectedBulan(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-800 outline-none focus:border-emerald-500 focus:bg-white"
-            >
-              <option value="all">Semua Periode Bulan</option>
-              {uniqueMonths.map((m) => (
-                <option key={m} value={m}>
-                  Bulan {m}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedBulan(val)}
+              options={dropdownBulanOptions}
+              className="w-full md:w-52"
+            />
           </div>
         </section>
 

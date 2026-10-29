@@ -395,7 +395,7 @@ export default function PengaturanPage() {
             <h2 className="font-black text-slate-800 text-base">Cadangan Data (Backup)</h2>
           </div>
           <p className="text-xs text-slate-500 mb-5">
-            Ekspor seluruh data masjid (Kas, Jamaah, Zakat, Inventaris, Wakaf, Petugas Jumat) ke
+            Ekspor seluruh data masjid (Kas, Jamaah, Zakat, Inventaris, Wakaf, Petugas Jumat, Saran Jamaah, dan Master Kategori) ke
             format JSON untuk disimpan sebagai arsip atau dipindah ke perangkat lain.
           </p>
 
@@ -463,7 +463,7 @@ export default function PengaturanPage() {
             <h2 className="font-black text-slate-800 text-base">Keamanan & Kata Sandi Administrator</h2>
           </div>
           <p className="text-xs text-slate-500 mb-5">
-            Kelola kata sandi yang digunakan oleh pengurus DKM untuk masuk ke Pusat Komando Administrator.
+            Kelola kata sandi yang digunakan oleh pengurus DKM untuk masuk ke Portal Administrasi DKM.
           </p>
 
           <form onSubmit={handleSavePassword} className="max-w-md space-y-4">

@@ -15,10 +15,13 @@ import {
   TrendingUp,
   TrendingDown,
   RefreshCw,
+  ArrowDownRight,
+  ArrowUpRight,
 } from 'lucide-react';
 import AdminLayout from '@/components/layout/admin-layout';
+import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 import { DataService } from '@/lib/data-service';
-import { KasItem, TipeKas } from '@/types';
+import { KasItem, TipeKas, KategoriItem } from '@/types';
 
 const KETERANGAN_OPTIONS = [
   'Infaq Jumat',
@@ -33,6 +36,7 @@ const KETERANGAN_OPTIONS = [
 
 export default function FinancePage() {
   const [dataKas, setDataKas] = useState<KasItem[]>([]);
+  const [kategoriKas, setKategoriKas] = useState<KategoriItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modals
@@ -62,8 +66,15 @@ export default function FinancePage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const items = await DataService.getKas();
+      const [items, categories] = await Promise.all([
+        DataService.getKas(),
+        DataService.getKategori('kas'),
+      ]);
       setDataKas(items);
+      const activeCats = categories.filter((k) => k.is_active !== false);
+      if (activeCats.length > 0) {
+        setKategoriKas(activeCats);
+      }
     } catch (error) {
       console.error('Failed to load kas:', error);
     } finally {
@@ -76,7 +87,102 @@ export default function FinancePage() {
     setCurrentDateStr(new Date().toLocaleDateString('id-ID'));
     setFormData((prev) => ({ ...prev, tanggal: today }));
     loadData();
+
+    const handleKategoriUpdate = () => {
+      DataService.getKategori('kas').then((cats) => {
+        const activeCats = cats.filter((k) => k.is_active !== false);
+        if (activeCats.length > 0) setKategoriKas(activeCats);
+      });
+    };
+    window.addEventListener('masjid_kategori_updated', handleKategoriUpdate);
+    return () => window.removeEventListener('masjid_kategori_updated', handleKategoriUpdate);
   }, []);
+
+  const keteranganOptions = useMemo(() => {
+    if (kategoriKas.length > 0) {
+      return kategoriKas.map((k) => k.nama);
+    }
+    return KETERANGAN_OPTIONS;
+  }, [kategoriKas]);
+
+  // Options terstruktur untuk CustomDropdown
+  const dropdownKeteranganOptions: DropdownOption[] = useMemo(() => {
+    return keteranganOptions.map((name) => {
+      const cat = kategoriKas.find((k) => k.nama === name);
+      let badgeVariant: 'emerald' | 'rose' | 'slate' = 'slate';
+      let badgeText = 'Semua';
+
+      if (cat?.tipe === 'masuk' || ['Infaq Jumat', 'Donasi', 'Zakat'].includes(name)) {
+        badgeVariant = 'emerald';
+        badgeText = '+ Masuk';
+      } else if (
+        cat?.tipe === 'keluar' ||
+        ['Operasional', 'Listrik & Air', 'Honor', 'Perawatan'].includes(name)
+      ) {
+        badgeVariant = 'rose';
+        badgeText = '- Keluar';
+      }
+
+      return {
+        value: name,
+        label: name,
+        badge: {
+          text: badgeText,
+          variant: badgeVariant,
+        },
+      };
+    });
+  }, [keteranganOptions, kategoriKas]);
+
+  const handleKeteranganChange = (val: string) => {
+    const matchCat = kategoriKas.find((k) => k.nama === val);
+    let newTipe = formData.tipe;
+    if (matchCat?.tipe === 'masuk') {
+      newTipe = 'masuk';
+    } else if (matchCat?.tipe === 'keluar') {
+      newTipe = 'keluar';
+    } else if (['Infaq Jumat', 'Donasi', 'Zakat'].includes(val)) {
+      newTipe = 'masuk';
+    } else if (['Operasional', 'Listrik & Air', 'Honor', 'Perawatan'].includes(val)) {
+      newTipe = 'keluar';
+    }
+    setFormData((prev) => ({ ...prev, keterangan: val, tipe: newTipe }));
+  };
+
+  const handleEditKeteranganChange = (val: string) => {
+    if (!editData) return;
+    const matchCat = kategoriKas.find((k) => k.nama === val);
+    let newTipe = editData.tipe;
+    if (matchCat?.tipe === 'masuk') {
+      newTipe = 'masuk';
+    } else if (matchCat?.tipe === 'keluar') {
+      newTipe = 'keluar';
+    } else if (['Infaq Jumat', 'Donasi', 'Zakat'].includes(val)) {
+      newTipe = 'masuk';
+    } else if (['Operasional', 'Listrik & Air', 'Honor', 'Perawatan'].includes(val)) {
+      newTipe = 'keluar';
+    }
+    setEditData((prev) => (prev ? { ...prev, keterangan: val, tipe: newTipe } : null));
+  };
+
+  const editDropdownOptions = useMemo(() => {
+    if (!editData) return dropdownKeteranganOptions;
+    const exists = dropdownKeteranganOptions.some((o) => o.value === editData.keterangan);
+    if (!exists && editData.keterangan) {
+      return [
+        ...dropdownKeteranganOptions,
+        {
+          value: editData.keterangan,
+          label: editData.keterangan,
+          badge: {
+            text: editData.tipe === 'masuk' ? '+ Masuk' : '- Keluar',
+            variant: (editData.tipe === 'masuk' ? 'emerald' : 'rose') as 'emerald' | 'rose',
+          },
+        },
+      ];
+    }
+    return dropdownKeteranganOptions;
+  }, [dropdownKeteranganOptions, editData]);
 
   // Filtered Data
   const filteredData = useMemo(() => {
@@ -207,22 +313,22 @@ export default function FinancePage() {
         </div>
 
         {/* Stat Cards */}
-        <div className="no-print grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          <div className="rounded-2xl sm:rounded-[2rem] border border-slate-100 bg-white p-4.5 sm:p-6 shadow-xs">
+        <div className="no-print grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
+          <div className="col-span-2 sm:col-span-1 rounded-2xl sm:rounded-[2rem] border border-slate-100 bg-white p-4 sm:p-6 shadow-xs">
             <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Saldo Akhir Kas</p>
             <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl md:text-3xl font-black text-emerald-800 font-serif-elegant">
               Rp {(totalInfaq - totalKeluar).toLocaleString('id-ID')}
             </p>
           </div>
-          <div className="rounded-2xl sm:rounded-[2rem] border border-slate-100 bg-white p-4.5 sm:p-6 shadow-xs">
-            <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Total Pemasukan</p>
-            <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl md:text-3xl font-black text-blue-600 font-serif-elegant">
+          <div className="rounded-2xl sm:rounded-[2rem] border border-slate-100 bg-white p-3.5 sm:p-6 shadow-xs">
+            <p className="text-[9px] sm:text-[10px] font-black tracking-widest text-slate-400 uppercase truncate">Total Pemasukan</p>
+            <p className="mt-1.5 sm:mt-2 text-base sm:text-2xl md:text-3xl font-black text-blue-600 font-serif-elegant">
               Rp {totalInfaq.toLocaleString('id-ID')}
             </p>
           </div>
-          <div className="rounded-2xl sm:rounded-[2rem] border border-slate-100 bg-white p-4.5 sm:p-6 shadow-xs">
-            <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Total Pengeluaran</p>
-            <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl md:text-3xl font-black text-red-500 font-serif-elegant">
+          <div className="rounded-2xl sm:rounded-[2rem] border border-slate-100 bg-white p-3.5 sm:p-6 shadow-xs">
+            <p className="text-[9px] sm:text-[10px] font-black tracking-widest text-slate-400 uppercase truncate">Total Pengeluaran</p>
+            <p className="mt-1.5 sm:mt-2 text-base sm:text-2xl md:text-3xl font-black text-red-500 font-serif-elegant">
               Rp {totalKeluar.toLocaleString('id-ID')}
             </p>
           </div>
@@ -289,12 +395,12 @@ export default function FinancePage() {
         </div>
 
         {/* Printable Data Table */}
-        <div id="printable-area" className="rounded-[2.5rem] border border-slate-100 bg-white overflow-hidden shadow-xs">
+        <div id="printable-area" className="rounded-2xl sm:rounded-[2.5rem] border border-slate-100 bg-white overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-100 text-[9px] font-black tracking-widest text-slate-400 uppercase">
                 <tr>
-                  <th className="no-print px-6 py-4">
+                  <th className="no-print px-3.5 sm:px-6 py-3.5 sm:py-4">
                     <input
                       type="checkbox"
                       className="rounded text-emerald-600 focus:ring-emerald-500"
@@ -302,10 +408,10 @@ export default function FinancePage() {
                       checked={selectedIds.length === filteredData.length && filteredData.length > 0}
                     />
                   </th>
-                  <th className="px-6 py-4">Keterangan</th>
-                  <th className="px-6 py-4">Tanggal</th>
-                  <th className="px-6 py-4 text-right">Nominal</th>
-                  <th className="no-print px-6 py-4 text-center">Aksi</th>
+                  <th className="px-3.5 sm:px-6 py-3.5 sm:py-4">Keterangan</th>
+                  <th className="px-3.5 sm:px-6 py-3.5 sm:py-4">Tanggal</th>
+                  <th className="px-3.5 sm:px-6 py-3.5 sm:py-4 text-right">Nominal</th>
+                  <th className="no-print px-3.5 sm:px-6 py-3.5 sm:py-4 text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -319,7 +425,7 @@ export default function FinancePage() {
                           selectedIds.length > 0 && !isSelected ? 'no-print-row' : ''
                         }`}
                       >
-                        <td className="no-print px-6 py-4">
+                        <td className="no-print px-3.5 sm:px-6 py-3 sm:py-4">
                           <input
                             type="checkbox"
                             className="rounded text-emerald-600 focus:ring-emerald-500"
@@ -327,7 +433,7 @@ export default function FinancePage() {
                             onChange={() => toggleSelectRow(item.id)}
                           />
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-3.5 sm:px-6 py-3 sm:py-4">
                           <div className="font-bold text-slate-800 uppercase">{item.keterangan}</div>
                           <span
                             className={`inline-block mt-1 px-2 py-0.5 rounded text-[8px] font-black uppercase ${
@@ -339,15 +445,15 @@ export default function FinancePage() {
                             {item.tipe}
                           </span>
                         </td>
-                        <td className="px-6 py-4 font-mono text-slate-500">{item.tanggal}</td>
+                        <td className="px-3.5 sm:px-6 py-3 sm:py-4 font-mono text-slate-500 whitespace-nowrap">{item.tanggal}</td>
                         <td
-                          className={`px-6 py-4 text-right font-mono font-black text-xs ${
+                          className={`px-3.5 sm:px-6 py-3 sm:py-4 text-right font-mono font-black text-xs whitespace-nowrap ${
                             item.tipe === 'masuk' ? 'text-emerald-600' : 'text-red-500'
                           }`}
                         >
                           {item.tipe === 'masuk' ? '+' : '-'} Rp {Number(item.nominal).toLocaleString('id-ID')}
                         </td>
-                        <td className="no-print px-6 py-4 text-center">
+                        <td className="no-print px-3.5 sm:px-6 py-3 sm:py-4 text-center">
                           <div className="flex items-center justify-center gap-2 text-slate-400">
                             <button
                               onClick={() => setViewData(item)}
@@ -415,36 +521,20 @@ export default function FinancePage() {
 
               <form onSubmit={handleAdd} className="space-y-4">
                 <div>
-                  <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-1">
-                    Keterangan
-                  </label>
-                  <select
+                  <CustomDropdown
+                    label="Keterangan Transaksi"
                     required
-                    className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900 cursor-pointer"
                     value={formData.keterangan}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      let newTipe = formData.tipe;
-                      if (['Infaq Jumat', 'Donasi', 'Zakat'].includes(val)) {
-                        newTipe = 'masuk';
-                      } else if (['Operasional', 'Listrik & Air', 'Honor', 'Perawatan'].includes(val)) {
-                        newTipe = 'keluar';
-                      }
-                      setFormData({ ...formData, keterangan: val, tipe: newTipe });
-                    }}
-                  >
-                    {KETERANGAN_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={handleKeteranganChange}
+                    options={dropdownKeteranganOptions}
+                    placeholder="Pilih kategori keterangan kas..."
+                  />
 
                   {formData.keterangan === 'Lainnya' && (
                     <input
                       type="text"
                       placeholder="Tuliskan rincian keterangan lainnya..."
-                      className="mt-2 w-full rounded-2xl border border-slate-100 bg-slate-50 p-3 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900"
+                      className="mt-2.5 w-full rounded-2xl border border-slate-100 bg-slate-50 p-3 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900"
                       value={formData.keteranganCustom}
                       onChange={(e) => setFormData({ ...formData, keteranganCustom: e.target.value })}
                     />
@@ -467,26 +557,44 @@ export default function FinancePage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-1">
+                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-1.5">
                       Jenis Arus Kas
                     </label>
-                    <select
-                      className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900"
-                      value={formData.tipe}
-                      onChange={(e) => setFormData({ ...formData, tipe: e.target.value as TipeKas })}
-                    >
-                      <option value="masuk">Pemasukan (+)</option>
-                      <option value="keluar">Pengeluaran (-)</option>
-                    </select>
+                    <div className="grid grid-cols-2 p-1 bg-slate-100/90 rounded-2xl gap-1 border border-slate-200/60">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, tipe: 'masuk' })}
+                        className={`py-2 px-1.5 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 ${
+                          formData.tipe === 'masuk'
+                            ? 'bg-emerald-600 text-white shadow-xs font-black'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        <ArrowDownRight size={13} />
+                        <span>Masuk (+)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, tipe: 'keluar' })}
+                        className={`py-2 px-1.5 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 ${
+                          formData.tipe === 'keluar'
+                            ? 'bg-rose-600 text-white shadow-xs font-black'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        <ArrowUpRight size={13} />
+                        <span>Keluar (-)</span>
+                      </button>
+                    </div>
                   </div>
                   <div>
-                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-1">
+                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-1.5">
                       Tanggal
                     </label>
                     <input
                       type="date"
                       required
-                      className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900 font-mono"
+                      className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-2.5 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900 font-mono"
                       value={formData.tanggal}
                       onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
                     />
@@ -518,37 +626,14 @@ export default function FinancePage() {
 
               <form onSubmit={handleUpdate} className="space-y-4">
                 <div>
-                  <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-1">
-                    Keterangan
-                  </label>
-                  <select
+                  <CustomDropdown
+                    label="Keterangan Transaksi"
                     required
-                    className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900 cursor-pointer"
-                    value={
-                      KETERANGAN_OPTIONS.includes(editData.keterangan)
-                        ? editData.keterangan
-                        : 'Lainnya'
-                    }
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      let newTipe = editData.tipe;
-                      if (['Infaq Jumat', 'Donasi', 'Zakat'].includes(val)) {
-                        newTipe = 'masuk';
-                      } else if (['Operasional', 'Listrik & Air', 'Honor', 'Perawatan'].includes(val)) {
-                        newTipe = 'keluar';
-                      }
-                      setEditData({ ...editData, keterangan: val, tipe: newTipe });
-                    }}
-                  >
-                    {KETERANGAN_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                    {!KETERANGAN_OPTIONS.includes(editData.keterangan) && (
-                      <option value={editData.keterangan}>{editData.keterangan}</option>
-                    )}
-                  </select>
+                    value={editData.keterangan}
+                    onChange={handleEditKeteranganChange}
+                    options={editDropdownOptions}
+                    placeholder="Pilih kategori transaksi..."
+                  />
                 </div>
 
                 <div>
@@ -566,26 +651,44 @@ export default function FinancePage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-1">
-                      Jenis
+                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-1.5">
+                      Jenis Arus Kas
                     </label>
-                    <select
-                      className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900"
-                      value={editData.tipe}
-                      onChange={(e) => setEditData({ ...editData, tipe: e.target.value as TipeKas })}
-                    >
-                      <option value="masuk">Pemasukan (+)</option>
-                      <option value="keluar">Pengeluaran (-)</option>
-                    </select>
+                    <div className="grid grid-cols-2 p-1 bg-slate-100/90 rounded-2xl gap-1 border border-slate-200/60">
+                      <button
+                        type="button"
+                        onClick={() => setEditData({ ...editData, tipe: 'masuk' })}
+                        className={`py-2 px-1.5 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 ${
+                          editData.tipe === 'masuk'
+                            ? 'bg-emerald-600 text-white shadow-xs font-black'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        <ArrowDownRight size={13} />
+                        <span>Masuk (+)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditData({ ...editData, tipe: 'keluar' })}
+                        className={`py-2 px-1.5 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 ${
+                          editData.tipe === 'keluar'
+                            ? 'bg-rose-600 text-white shadow-xs font-black'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        <ArrowUpRight size={13} />
+                        <span>Keluar (-)</span>
+                      </button>
+                    </div>
                   </div>
                   <div>
-                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-1">
+                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase block mb-1.5">
                       Tanggal
                     </label>
                     <input
                       type="date"
                       required
-                      className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900 font-mono"
+                      className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-2.5 text-xs font-bold outline-none focus:bg-white focus:border-emerald-500 text-slate-900 font-mono"
                       value={editData.tanggal}
                       onChange={(e) => setEditData({ ...editData, tanggal: e.target.value })}
                     />

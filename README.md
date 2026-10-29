@@ -17,7 +17,7 @@ Project ini menggantikan arsitektur *microservices* Laravel sebelumnya menjadi a
    - Transparansi Keuangan Terbuka (Total kas umat & tabel aliran mutasi kas terbaru).
    - Modal Pop-up QRIS Donasi Infaq & Sedekah.
 
-2. **Pusat Komando (Admin Dashboard - `/dashboard`)**:
+2. **Panel Pengurus DKM (Admin Dashboard - `/dashboard`)**:
    - Statistik utama: Saldo Kas, Total Aset Terinventarisir, dan Agenda Terdekat.
    - Ringkasan 5 mutasi kas terakhir & 3 agenda mendatang.
    - Akses cepat untuk pencatatan transaksi kas dan input inventaris.
@@ -121,7 +121,7 @@ d:\Projects\masjid-al-mukhlisin
 ├── src/
 │   ├── app/
 │   │   ├── api/                    # REST API endpoints (Kas, Inventory, Khutbah, Auth)
-│   │   ├── dashboard/page.tsx      # Halaman Pusat Komando (Admin Overview)
+│   │   ├── dashboard/page.tsx      # Halaman Panel Pengurus DKM (Admin Overview)
 │   │   ├── finance/page.tsx        # Halaman Manajemen Kas
 │   │   ├── inventory/page.tsx      # Halaman Manajemen Inventaris
 │   │   ├── khutbah/page.tsx        # Halaman Manajemen Khutbah & Kajian

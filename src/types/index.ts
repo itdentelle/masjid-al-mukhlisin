@@ -8,7 +8,8 @@ export type KategoriKas =
   | 'Listrik & Air'
   | 'Honor'
   | 'Perawatan'
-  | 'Lainnya';
+  | 'Lainnya'
+  | (string & {});
 export type StatusKhutbah = 'terjadwal' | 'selesai' | 'batal';
 export type PeranJamaah =
   | 'Jamaah'
@@ -16,21 +17,39 @@ export type PeranJamaah =
   | 'Imam'
   | 'Muadzin'
   | 'Remaja Masjid'
-  | 'Donatur';
+  | 'Donatur'
+  | (string & {});
 export type JenisZakat =
   | 'Zakat Fitrah (uang)'
   | 'Zakat Fitrah (beras)'
   | 'Zakat Mal'
   | 'Qurban Sapi (1/7)'
   | 'Qurban Kambing'
-  | 'Penyaluran';
+  | 'Penyaluran'
+  | (string & {});
 export type JenisWakaf =
   | 'Tanah'
   | 'Bangunan'
   | 'Uang'
   | "Al-Qur'an"
   | 'Peralatan'
-  | 'Lainnya';
+  | 'Lainnya'
+  | (string & {});
+
+export type ModulKategori = 'kas' | 'zakat' | 'wakaf' | 'saran' | 'agenda' | 'jamaah';
+
+export interface KategoriItem {
+  id: number | string;
+  modul: ModulKategori;
+  nama: string;
+  deskripsi?: string | null;
+  tipe?: 'masuk' | 'keluar' | 'semua' | null;
+  urutan: number;
+  is_active: boolean;
+  user_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export interface InventoryItem {
   id: number | string;
@@ -58,6 +77,7 @@ export interface KasItem {
 export interface KhutbahItem {
   id: number | string;
   tanggal: string;
+  waktu?: string | null;
   jenis_kegiatan: string;
   khotib: string;
   tema?: string | null;
@@ -131,7 +151,8 @@ export type KategoriSaran =
   | 'Kajian & Dakwah'
   | 'Pelayanan DKM'
   | 'Keuangan'
-  | 'Lainnya';
+  | 'Lainnya'
+  | (string & {});
 
 export type StatusSaran = 'baru' | 'ditinjau' | 'ditindaklanjuti' | 'selesai';
 

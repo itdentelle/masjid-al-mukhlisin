@@ -17,15 +17,25 @@ import {
   ShieldCheck,
   Heart,
   Award,
-  Sparkles,
   RefreshCw,
 } from 'lucide-react';
 import AdminLayout from '@/components/layout/admin-layout';
+import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 import { DataService } from '@/lib/data-service';
-import { JamaahItem, PeranJamaah } from '@/types';
+import { JamaahItem, PeranJamaah, KategoriItem } from '@/types';
+
+const DEFAULT_JAMAAH_PERAN = [
+  'Pengurus DKM',
+  'Imam',
+  'Muadzin',
+  'Remaja Masjid',
+  'Donatur',
+  'Jamaah',
+];
 
 export default function JamaahPage() {
   const [dataJamaah, setDataJamaah] = useState<JamaahItem[]>([]);
+  const [kategoriJamaah, setKategoriJamaah] = useState<KategoriItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modals
@@ -54,8 +64,15 @@ export default function JamaahPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const items = await DataService.getJamaah();
+      const [items, categories] = await Promise.all([
+        DataService.getJamaah(),
+        DataService.getKategori('jamaah'),
+      ]);
       setDataJamaah(items);
+      const activeCats = categories.filter((k) => k.is_active !== false);
+      if (activeCats.length > 0) {
+        setKategoriJamaah(activeCats);
+      }
     } catch (error) {
       console.error('Failed to load jamaah:', error);
     } finally {
@@ -65,7 +82,37 @@ export default function JamaahPage() {
 
   useEffect(() => {
     loadData();
+
+    const handleKategoriUpdate = () => {
+      DataService.getKategori('jamaah').then((cats) => {
+        const activeCats = cats.filter((k) => k.is_active !== false);
+        if (activeCats.length > 0) setKategoriJamaah(activeCats);
+      });
+    };
+    window.addEventListener('masjid_kategori_updated', handleKategoriUpdate);
+    return () => window.removeEventListener('masjid_kategori_updated', handleKategoriUpdate);
   }, []);
+
+  const peranOptions = useMemo(() => {
+    if (kategoriJamaah.length > 0) {
+      return kategoriJamaah.map((k) => k.nama);
+    }
+    return DEFAULT_JAMAAH_PERAN;
+  }, [kategoriJamaah]);
+
+  const dropdownPeranOptions: DropdownOption[] = useMemo(() => {
+    return peranOptions.map((opt) => ({
+      value: opt,
+      label: opt,
+    }));
+  }, [peranOptions]);
+
+  const dropdownFilterPeranOptions: DropdownOption[] = useMemo(() => {
+    return [
+      { value: 'all', label: 'Semua Peran / Status' },
+      ...dropdownPeranOptions,
+    ];
+  }, [dropdownPeranOptions]);
 
   // Filtered
   const filteredJamaah = useMemo(() => {
@@ -289,20 +336,13 @@ export default function JamaahPage() {
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <select
+          <div className="flex items-center gap-2 w-full md:w-56">
+            <CustomDropdown
               value={filterPeran}
-              onChange={(e) => setFilterPeran(e.target.value)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="all">Semua Peran / Status</option>
-              <option value="Pengurus DKM">Pengurus DKM</option>
-              <option value="Imam">Imam</option>
-              <option value="Muadzin">Muadzin</option>
-              <option value="Remaja Masjid">Remaja Masjid</option>
-              <option value="Donatur">Donatur</option>
-              <option value="Jamaah">Jamaah Warga</option>
-            </select>
+              onChange={(val) => setFilterPeran(val)}
+              options={dropdownFilterPeranOptions}
+              className="w-full"
+            />
           </div>
         </div>
 
@@ -475,21 +515,14 @@ export default function JamaahPage() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Peran / Status *</label>
-                  <select
+                  <CustomDropdown
+                    label="Peran / Status"
+                    required
                     value={formData.peran}
-                    onChange={(e) =>
-                      setFormData({ ...formData, peran: e.target.value as PeranJamaah })
-                    }
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
-                  >
-                    <option value="Jamaah">Jamaah Warga</option>
-                    <option value="Pengurus DKM">Pengurus DKM</option>
-                    <option value="Imam">Imam</option>
-                    <option value="Muadzin">Muadzin</option>
-                    <option value="Remaja Masjid">Remaja Masjid</option>
-                    <option value="Donatur">Donatur</option>
-                  </select>
+                    onChange={(val) => setFormData({ ...formData, peran: val as PeranJamaah })}
+                    options={dropdownPeranOptions}
+                    placeholder="Pilih peran jamaah..."
+                  />
                 </div>
 
                 <div>
@@ -562,21 +595,18 @@ export default function JamaahPage() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Peran / Status *</label>
-                  <select
+                  <CustomDropdown
+                    label="Peran / Status"
+                    required
                     value={editItem.peran}
-                    onChange={(e) =>
-                      setEditItem({ ...editItem, peran: e.target.value as PeranJamaah })
+                    onChange={(val) => setEditItem({ ...editItem, peran: val as PeranJamaah })}
+                    options={
+                      !peranOptions.includes(editItem.peran) && editItem.peran
+                        ? [...dropdownPeranOptions, { value: editItem.peran, label: editItem.peran }]
+                        : dropdownPeranOptions
                     }
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
-                  >
-                    <option value="Jamaah">Jamaah Warga</option>
-                    <option value="Pengurus DKM">Pengurus DKM</option>
-                    <option value="Imam">Imam</option>
-                    <option value="Muadzin">Muadzin</option>
-                    <option value="Remaja Masjid">Remaja Masjid</option>
-                    <option value="Donatur">Donatur</option>
-                  </select>
+                    placeholder="Pilih peran jamaah..."
+                  />
                 </div>
 
                 <div>
