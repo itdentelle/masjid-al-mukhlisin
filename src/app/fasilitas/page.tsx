@@ -190,7 +190,7 @@ export default function FasilitasDetailPage() {
               </div>
               <div>
                 <span className="font-serif-elegant text-sm font-bold tracking-wide text-white block leading-tight">
-                  Al-Mukhlisin
+                  {identitas?.nama || 'Al-Mukhlisin'}
                 </span>
                 <span className="text-[10px] font-mono text-emerald-300/80 leading-tight block">
                   ID SIMAS {identitas?.nomor_id_kemenag || '01.4.13.04.06.000158'} | Lagadar
@@ -711,7 +711,7 @@ export default function FasilitasDetailPage() {
                   {selectedItem.lokasi}
                 </p>
                 <p className="text-[11px] text-slate-500 pl-6 mt-0.5">
-                  Gedung Masjid Al-Mukhlisin, Kp. Jalan Cagak, Lagadar
+                  Gedung Masjid {identitas?.nama || 'Al-Mukhlisin'}, {identitas?.alamat || 'Kp. Jalan Cagak, Lagadar'}
                 </p>
               </div>
 
@@ -722,7 +722,7 @@ export default function FasilitasDetailPage() {
                   <span>SOP & Amanah Penggunaan</span>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Fasilitas ini merupakan aset ibadah umat di Masjid Al-Mukhlisin. Dikelola dan
+                  Fasilitas ini merupakan aset ibadah umat di Masjid {identitas?.nama || 'Al-Mukhlisin'}. Dikelola dan
                   dirawat berkala oleh pengurus DKM. Mohon dijaga bersama dengan menjaga kebersihan
                   dan kerapian setelah digunakan.
                 </p>

@@ -593,20 +593,20 @@ export default function HomePage() {
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-950/80 px-3 sm:px-4 py-1 text-[10px] sm:text-[11px] font-semibold text-emerald-300 backdrop-blur-md shadow-inner">
                 <span className="tracking-wide">Kartu Masjid Kemenag RI</span>
                 <span className="text-white/30">|</span>
-                <span className="font-mono text-white tracking-wider font-bold">ID 01.4.13.04.06.000158</span>
+                <span className="font-mono text-white tracking-wider font-bold">ID {identitas?.nomor_id_kemenag || '01.4.13.04.06.000158'}</span>
               </div>
             </div>
 
             {/* Judul Utama Serif (Al-Mukhlisin dilindungi whitespace-nowrap agar tidak patah tanda hubung '-') */}
             <h1 className="font-serif-elegant mb-3.5 sm:mb-5 text-3xl sm:text-5xl md:text-6xl lg:text-[4.5rem] leading-[1.08] font-bold text-white drop-shadow-md">
-              Masjid <span className="whitespace-nowrap">Al-Mukhlisin</span>
+              Masjid <span className="whitespace-nowrap">{identitas?.nama || 'Al-Mukhlisin'}</span>
             </h1>
 
             {/* Alamat Resmi Hero & Tanggal Hijriah */}
             <div className="mb-5 sm:mb-7 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs md:text-sm text-emerald-200/90 font-medium">
               <span className="flex items-center gap-1.5">
                 <MapPin size={14} className="text-[#d4af37] shrink-0 sm:size-[16px]" />
-                <span className="text-[11px] sm:text-xs md:text-sm">Kp. Jalan Cagak RT.005 RW.004 Desa Lagadar</span>
+                <span className="text-[11px] sm:text-xs md:text-sm">{identitas?.alamat || 'Kp. Jalan Cagak RT.005 RW.004 Desa Lagadar'}</span>
               </span>
               {todayDateString && (
                 <span className="flex items-center gap-1.5 text-emerald-300 font-semibold bg-emerald-950/70 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full border border-emerald-800/40 text-[10px] sm:text-xs">
@@ -882,7 +882,7 @@ export default function HomePage() {
                 </h2>
                 <div className="space-y-2 text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 font-medium">
                   <p>
-                    Masjid Al-Mukhlisin hadir sebagai pusat ibadah dan pembinaan umat di kawasan
+                    Masjid {identitas?.nama || 'Al-Mukhlisin'} hadir sebagai pusat ibadah dan pembinaan umat di kawasan
                     Kp. Jalan Cagak RT.005 RW.004 Desa Lagadar. Mengusung konsep transparansi modern berbasis teknologi, kami berdedikasi
                     untuk menghadirkan akuntabilitas penuh bagi setiap donasi jamaah.
                   </p>
@@ -1521,7 +1521,7 @@ export default function HomePage() {
                   Kotak Saran & Masukan Jamaah
                 </h2>
                 <p className="text-xs md:text-sm text-slate-300 leading-relaxed font-medium">
-                  "Agama adalah nasehat." (HR. Muslim). Setiap masukan, kritik konstruktif, dan usulan jamaah sangat berharga demi kemakmuran dan kenyamanan ibadah bersama di Masjid Al-Mukhlisin.
+                  "Agama adalah nasehat." (HR. Muslim). Setiap masukan, kritik konstruktif, dan usulan jamaah sangat berharga demi kemakmuran dan kenyamanan ibadah bersama di Masjid {identitas?.nama || 'Al-Mukhlisin'}.
                 </p>
               </div>
 
@@ -1805,7 +1805,7 @@ export default function HomePage() {
 
           <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-8 text-center md:flex-row md:text-left">
             <p className="text-xs font-bold text-slate-400">
-              &copy; {currentYear} Masjid Al-Mukhlisin. All rights reserved.
+              &copy; {currentYear} Masjid {identitas?.nama || 'Al-Mukhlisin'}. All rights reserved.
             </p>
             <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
               Sistem Informasi & Manajemen Masjid Terpadu

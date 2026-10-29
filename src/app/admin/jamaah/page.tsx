@@ -22,7 +22,7 @@ import {
 import AdminLayout from '@/components/layout/admin-layout';
 import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 import { DataService } from '@/lib/data-service';
-import { JamaahItem, PeranJamaah, KategoriItem } from '@/types';
+import { JamaahItem, PeranJamaah, KategoriItem, IdentitasMasjid } from '@/types';
 
 const DEFAULT_JAMAAH_PERAN = [
   'Pengurus DKM',
@@ -34,6 +34,7 @@ const DEFAULT_JAMAAH_PERAN = [
 ];
 
 export default function JamaahPage() {
+  const [identitas, setIdentitas] = useState<IdentitasMasjid | null>(null);
   const [dataJamaah, setDataJamaah] = useState<JamaahItem[]>([]);
   const [kategoriJamaah, setKategoriJamaah] = useState<KategoriItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,10 +65,12 @@ export default function JamaahPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [items, categories] = await Promise.all([
+      const [items, categories, identitasData] = await Promise.all([
         DataService.getJamaah(),
         DataService.getKategori('jamaah'),
+        DataService.getIdentitas(),
       ]);
+      if (identitasData) setIdentitas(identitasData);
       setDataJamaah(items);
       const activeCats = categories.filter((k) => k.is_active !== false);
       if (activeCats.length > 0) {
@@ -247,7 +250,7 @@ export default function JamaahPage() {
               <h1 className="text-xl sm:text-2xl font-black text-slate-800">Data Jamaah & Tokoh</h1>
             </div>
             <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1">
-              Pencatatan warga, kontak silaturahmi WhatsApp, dan kepengurusan Masjid Al-Mukhlisin
+              Pencatatan warga, kontak silaturahmi WhatsApp, dan kepengurusan Masjid {identitas?.nama || 'Al-Mukhlisin'}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">

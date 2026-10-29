@@ -193,7 +193,7 @@ export default function ZakatPublicPage() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-900/60 px-3.5 py-1 text-[10px] font-black tracking-widest text-emerald-300 uppercase">
-                <span>UNIT PENGUMPUL ZAKAT (UPZ) · MASJID AL-MUKHLISIN</span>
+                <span>UNIT PENGUMPUL ZAKAT (UPZ) · MASJID {(identitas?.nama || 'Al-Mukhlisin').toUpperCase()}</span>
               </div>
               <h1 className="font-serif-elegant text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white">
                 Layanan Zakat & Infaq
@@ -431,7 +431,7 @@ export default function ZakatPublicPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
             <div>
               <h3 className="font-bold text-base text-slate-800">Riwayat Catatan ZIS Terbuka</h3>
-              <p className="text-xs text-slate-500">Transparansi penerimaan zakat, infaq, dan sedekah DKM Al-Mukhlisin</p>
+              <p className="text-xs text-slate-500">Transparansi penerimaan zakat, infaq, dan sedekah DKM {identitas?.nama || 'Al-Mukhlisin'}</p>
             </div>
 
             {/* Search Input */}

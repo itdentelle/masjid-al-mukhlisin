@@ -193,7 +193,7 @@ export default function JamaahPublicPage() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-900/60 px-3.5 py-1 text-[10px] font-black tracking-widest text-emerald-300 uppercase">
-                <span>KEPENGURUSAN & WARGA JAMAAH · MASJID AL-MUKHLISIN</span>
+                <span>KEPENGURUSAN & WARGA JAMAAH · MASJID {(identitas?.nama || 'Al-Mukhlisin').toUpperCase()}</span>
               </div>
               <h1 className="font-serif-elegant text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white">
                 Data Jamaah & Tokoh
@@ -230,7 +230,7 @@ export default function JamaahPublicPage() {
               </div>
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 block">
-                  Ketua DKM Al-Mukhlisin
+                  Ketua DKM {identitas?.nama || 'Al-Mukhlisin'}
                 </span>
                 <p className="text-sm sm:text-base font-bold text-white">
                   {identitas?.ketua_dkm || 'Ustadz H. Ahmad Sobari'}

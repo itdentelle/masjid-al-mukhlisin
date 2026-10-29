@@ -163,7 +163,7 @@ export default function LaporanPublicPage() {
 
     // Sheet 1: Identitas & Ringkasan
     const summaryData = [
-      ['LAPORAN PERTANGGUNGJAWABAN DKM AL-MUKHLISIN'],
+      [`LAPORAN PERTANGGUNGJAWABAN DKM ${(identitas.nama || 'Al-Mukhlisin').toUpperCase()}`],
       ['Nomor SIMAS Kemenag RI', identitas.nomor_id_kemenag],
       ['Alamat', identitas.alamat],
       ['Tanggal Laporan', currentDateStr],
@@ -270,7 +270,7 @@ export default function LaporanPublicPage() {
                 Laporan Terbuka Masjid
               </h1>
               <p className="mt-2 text-xs sm:text-sm text-emerald-100/90 max-w-2xl leading-relaxed">
-                Dokumen pertanggungjawaban terbuka DKM Al-Mukhlisin meliputi transparansi keuangan kas, aset inventaris, wakaf tanah, kepengurusan jamaah, dan zakat.
+                Dokumen pertanggungjawaban terbuka DKM {identitas?.nama || 'Al-Mukhlisin'} meliputi transparansi keuangan kas, aset inventaris, wakaf tanah, kepengurusan jamaah, dan zakat.
               </p>
             </div>
 
@@ -339,7 +339,7 @@ export default function LaporanPublicPage() {
               </div>
               <div className="text-left">
                 <h2 className="font-serif-elegant text-xl sm:text-2xl font-black text-slate-900 tracking-wide uppercase leading-tight">
-                  DEWAN KEMAKMURAN MASJID AL-MUKHLISIN
+                  DEWAN KEMAKMURAN MASJID {(identitas.nama || 'Al-Mukhlisin').toUpperCase()}
                 </h2>
                 <p className="text-xs font-semibold text-slate-600">
                   {identitas.alamat} · Kec. Margaasih, Kab. Bandung Barat
@@ -482,7 +482,7 @@ export default function LaporanPublicPage() {
 
             <div className="grid grid-cols-2 gap-8 text-center text-xs">
               <div className="space-y-16">
-                <p className="font-bold text-slate-700">Mengetahui,<br />Ketua DKM Al-Mukhlisin</p>
+                <p className="font-bold text-slate-700">Mengetahui,<br />Ketua DKM {identitas.nama || 'Al-Mukhlisin'}</p>
                 <div>
                   <p className="font-bold text-slate-900 underline text-sm">
                     {identitas.ketua_dkm || 'Ustadz H. Ahmad Sobari'}

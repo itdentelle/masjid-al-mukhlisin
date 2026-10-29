@@ -154,6 +154,9 @@ export const DataService = {
         if (!error && data) {
           const merged = { ...stored, ...(data as IdentitasMasjid) };
           setStored('masjid_identitas_data', merged);
+          if (typeof document !== 'undefined' && merged.nama && document.title.includes('Al-Mukhlisin')) {
+            document.title = document.title.replace('Al-Mukhlisin', merged.nama);
+          }
           return merged;
         }
       } catch (err) {
@@ -185,6 +188,9 @@ export const DataService = {
     setStored('masjid_identitas_data', updated);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('masjid_identitas_updated', { detail: updated }));
+      if (typeof document !== 'undefined' && updated.nama) {
+        document.title = document.title.replace(/Masjid\s+[^\s|•-]+/i, `Masjid ${updated.nama}`);
+      }
     }
     return updated;
   },
@@ -713,12 +719,23 @@ export const DataService = {
     }
     const payload = { ...item, image: imageUrl || null };
     if (isSupabaseConfigured && supabase) {
+      // Try with waktu field first; if column missing, retry without it
       const { data, error } = await supabase
         .from('khutbahs')
         .insert([payload])
         .select()
         .single();
       if (!error && data) return data as KhutbahItem;
+      // PGRST204 = column not found in schema cache (waktu column may not exist yet)
+      if (error?.code === 'PGRST204' && error.message.includes('waktu')) {
+        const { waktu, ...payloadWithoutWaktu } = payload as any;
+        const { data: data2, error: error2 } = await supabase
+          .from('khutbahs')
+          .insert([payloadWithoutWaktu])
+          .select()
+          .single();
+        if (!error2 && data2) return { ...data2, waktu: waktu ?? null } as KhutbahItem;
+      }
     }
 
     const current = getStored<KhutbahItem[]>('masjid_khutbah_data', INITIAL_KHUTBAH);
@@ -756,6 +773,17 @@ export const DataService = {
         .select()
         .single();
       if (!error && data) return data as KhutbahItem;
+      // PGRST204 = column not found in schema cache (waktu column may not exist yet)
+      if (error?.code === 'PGRST204' && error.message.includes('waktu')) {
+        const { waktu, ...payloadWithoutWaktu } = payload as any;
+        const { data: data2, error: error2 } = await supabase
+          .from('khutbahs')
+          .update(payloadWithoutWaktu)
+          .eq('id', id)
+          .select()
+          .single();
+        if (!error2 && data2) return { ...data2, waktu: waktu ?? null } as KhutbahItem;
+      }
     }
 
     const current = getStored<KhutbahItem[]>('masjid_khutbah_data', INITIAL_KHUTBAH);

@@ -6,6 +6,21 @@ import Image from 'next/image';
 export default function AnimatedSplashScreen() {
   const [mounted, setMounted] = useState(false);
   const [stage, setStage] = useState<'enter' | 'animate' | 'exit' | 'done'>('enter');
+  const [namaMasjid, setNamaMasjid] = useState('AL-MUKHLISIN');
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('masjid_identitas_data');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.nama) setNamaMasjid(parsed.nama.toUpperCase());
+          if (parsed?.logo_url) setLogoUrl(parsed.logo_url);
+        }
+      } catch {}
+    }
+  }, []);
 
   useEffect(() => {
     // Cek apakah splash screen sudah pernah tampil di sesi ini
@@ -102,7 +117,7 @@ export default function AnimatedSplashScreen() {
           <div className="relative w-full h-full rounded-full overflow-hidden shadow-2xl ring-2 ring-amber-400/60 bg-[#064b36]">
             <Image
               src="/images/app-icon.png"
-              alt="Al-Mukhlisin"
+              alt={namaMasjid}
               fill
               priority
               sizes="180px"
@@ -121,7 +136,7 @@ export default function AnimatedSplashScreen() {
             Masjid Jami&apos;
           </p>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-wider bg-gradient-to-r from-amber-100 via-yellow-200 to-amber-300 bg-clip-text text-transparent drop-shadow-sm">
-            AL-MUKHLISIN
+            {namaMasjid}
           </h1>
           <p className="text-xs text-emerald-100/70 mt-1.5 font-medium tracking-wide">
             Sistem Informasi & Transparansi Umat

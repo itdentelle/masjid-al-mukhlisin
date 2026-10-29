@@ -21,7 +21,7 @@ import {
 import AdminLayout from '@/components/layout/admin-layout';
 import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 import { DataService } from '@/lib/data-service';
-import { InventoryItem, KondisiBarang, WakafItem, JenisWakaf, KategoriItem } from '@/types';
+import { InventoryItem, KondisiBarang, WakafItem, JenisWakaf, KategoriItem, IdentitasMasjid } from '@/types';
 
 const DEFAULT_WAKAF_CATEGORIES = [
   'Tanah',
@@ -33,6 +33,7 @@ const DEFAULT_WAKAF_CATEGORIES = [
 ];
 
 export default function InventoryPage() {
+  const [identitas, setIdentitas] = useState<IdentitasMasjid | null>(null);
   const [activeTab, setActiveTab] = useState<'inventaris' | 'wakaf'>('inventaris');
   const [dataAset, setDataAset] = useState<InventoryItem[]>([]);
   const [dataWakaf, setDataWakaf] = useState<WakafItem[]>([]);
@@ -68,11 +69,13 @@ export default function InventoryPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [invItems, wakafItems, categories] = await Promise.all([
+      const [invItems, wakafItems, categories, identitasData] = await Promise.all([
         DataService.getInventories(),
         DataService.getWakaf(),
         DataService.getKategori('wakaf'),
+        DataService.getIdentitas(),
       ]);
+      if (identitasData) setIdentitas(identitasData);
       setDataAset(invItems);
       setDataWakaf(wakafItems);
       const activeCats = categories.filter((k) => k.is_active !== false);
@@ -262,7 +265,7 @@ export default function InventoryPage() {
       <div className="p-3.5 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-4 sm:space-y-6 pb-24">
         {/* Print Title */}
         <div className="hidden print-only-title">
-          DAFTAR INVENTARIS FASILITAS MASJID AL-MUKHLISIN
+          DAFTAR INVENTARIS FASILITAS MASJID {(identitas?.nama || 'Al-Mukhlisin').toUpperCase()}
           <p className="text-xs font-normal mt-1">Dicetak pada: {currentDateStr || '-'}</p>
         </div>
 

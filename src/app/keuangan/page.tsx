@@ -767,7 +767,7 @@ export default function KeuanganDetailPage() {
               <span>Verifikasi Akuntabilitas Publik</span>
             </div>
             <h4 className="font-serif-elegant text-lg font-bold text-slate-900">
-              Dewan Kemakmuran Masjid (DKM) Al-Mukhlisin
+              Dewan Kemakmuran Masjid (DKM) {identitas?.nama || 'Al-Mukhlisin'}
             </h4>
             <p className="text-slate-500 text-[11px] leading-relaxed">
               Seluruh laporan keuangan disusun berdasarkan asas keterbukaan, akuntabel, dan diawasi bersama oleh

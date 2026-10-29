@@ -117,7 +117,7 @@ export default function LoginPage() {
             </div>
             <p className="mt-2.5 px-2 text-[11px] text-slate-400 flex items-center gap-1.5">
               <ShieldCheck size={13} className="text-emerald-600 shrink-0" />
-              <span>Akses terproteksi & terenkripsi DKM Al-Mukhlisin</span>
+              <span>Akses terproteksi & terenkripsi DKM {identitas?.nama || 'Al-Mukhlisin'}</span>
             </p>
           </div>
 
@@ -133,7 +133,7 @@ export default function LoginPage() {
         <div className="mt-8 pt-6 border-t border-slate-100 text-center">
           <p className="text-xs text-slate-400 leading-relaxed">
             Portal Khusus Pengurus & Pengelola DKM <br />
-            <strong className="text-emerald-950 font-bold">Masjid Al-Mukhlisin Lagadar</strong>
+            <strong className="text-emerald-950 font-bold">Masjid {identitas?.nama || 'Al-Mukhlisin'}</strong>
           </p>
         </div>
       </div>

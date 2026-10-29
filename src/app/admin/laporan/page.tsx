@@ -184,7 +184,7 @@ export default function LaporanPage() {
 
     // Sheet 1: Rekap Eksekutif
     const rekapData = [
-      ['LAPORAN KEUANGAN DAN MANAJEMEN MASJID AL-MUKHLISIN'],
+      [`LAPORAN KEUANGAN DAN MANAJEMEN MASJID ${(identitas.nama || 'Al-Mukhlisin').toUpperCase()}`],
       ['Nomor ID Kemenag RI (SIMAS):', identitas.nomor_id_kemenag],
       ['Alamat:', identitas.alamat],
       ['Tanggal Laporan Dibuat:', currentDateStr],

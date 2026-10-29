@@ -19,9 +19,10 @@ import {
 import AdminLayout from '@/components/layout/admin-layout';
 import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 import { DataService } from '@/lib/data-service';
-import { PetugasJumatItem, JamaahItem } from '@/types';
+import { PetugasJumatItem, JamaahItem, IdentitasMasjid } from '@/types';
 
 export default function PetugasJumatPage() {
+  const [identitas, setIdentitas] = useState<IdentitasMasjid | null>(null);
   const [dataPetugas, setDataPetugas] = useState<PetugasJumatItem[]>([]);
   const [dataJamaah, setDataJamaah] = useState<JamaahItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,10 +56,12 @@ export default function PetugasJumatPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [items, jamaahList] = await Promise.all([
+      const [items, jamaahList, identitasData] = await Promise.all([
         DataService.getPetugasJumat(),
         DataService.getJamaah(),
+        DataService.getIdentitas(),
       ]);
+      if (identitasData) setIdentitas(identitasData);
       setDataPetugas(items);
       setDataJamaah(jamaahList);
     } catch (error) {
@@ -299,7 +302,7 @@ export default function PetugasJumatPage() {
               <h1 className="text-xl sm:text-2xl font-black text-slate-800">Jadwal Petugas Shalat Jumat</h1>
             </div>
             <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1">
-              Penyusunan dan mading jadwal Khatib, Imam, dan Muadzin Shalat Jumat Masjid Al-Mukhlisin
+              Penyusunan dan mading jadwal Khatib, Imam, dan Muadzin Shalat Jumat Masjid {identitas?.nama || 'Al-Mukhlisin'}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">

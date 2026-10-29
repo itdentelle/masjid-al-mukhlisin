@@ -25,7 +25,7 @@ import {
 import AdminLayout from '@/components/layout/admin-layout';
 import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 import { DataService } from '@/lib/data-service';
-import { SaranKritikItem, KategoriSaran, StatusSaran, KategoriItem } from '@/types';
+import { SaranKritikItem, KategoriSaran, StatusSaran, KategoriItem, IdentitasMasjid } from '@/types';
 
 const DEFAULT_SARAN_CATEGORIES = [
   'Umum',
@@ -37,6 +37,7 @@ const DEFAULT_SARAN_CATEGORIES = [
 ];
 
 export default function AdminSaranPage() {
+  const [identitas, setIdentitas] = useState<IdentitasMasjid | null>(null);
   const [saranList, setSaranList] = useState<SaranKritikItem[]>([]);
   const [kategoriSaran, setKategoriSaran] = useState<KategoriItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,10 +63,15 @@ export default function AdminSaranPage() {
     setLoading(true);
     try {
       if (typeof DataService?.getSaranKritik === 'function') {
-        const [items, categories] = await Promise.all([
+        const [items, categories, idData] = await Promise.all([
           DataService.getSaranKritik(),
           DataService.getKategori('saran'),
+          DataService.getIdentitas(),
         ]);
+        if (idData) {
+          setIdentitas(idData);
+          setDitanggapiOleh((prev) => prev.includes('Al-Mukhlisin') ? `Pengurus DKM ${idData.nama || 'Al-Mukhlisin'}` : prev);
+        }
         setSaranList(Array.isArray(items) ? items : []);
         const activeCats = categories.filter((k) => k.is_active !== false);
         if (activeCats.length > 0) setKategoriSaran(activeCats);
@@ -118,7 +124,7 @@ export default function AdminSaranPage() {
   const openEditModal = (item: SaranKritikItem) => {
     setSelectedItem(item);
     setTanggapanText(item.tanggapan_dkm || '');
-    setDitanggapiOleh(item.ditanggapi_oleh || 'Pengurus DKM Al-Mukhlisin');
+    setDitanggapiOleh(item.ditanggapi_oleh || `Pengurus DKM ${identitas?.nama || 'Al-Mukhlisin'}`);
     setStatusVal(item.status === 'baru' ? 'ditindaklanjuti' : item.status);
     setIsPublikVal(item.is_publik !== false);
     setIsModalOpen(true);
@@ -527,7 +533,7 @@ export default function AdminSaranPage() {
                       {item.tanggapan_dkm}
                     </p>
                     <p className="text-[10px] text-emerald-700 font-bold">
-                      Oleh: {item.ditanggapi_oleh || 'Pengurus DKM Al-Mukhlisin'}
+                      Oleh: {item.ditanggapi_oleh || `Pengurus DKM ${identitas?.nama || 'Al-Mukhlisin'}`}
                     </p>
                   </div>
                 ) : (

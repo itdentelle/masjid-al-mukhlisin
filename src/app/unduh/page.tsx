@@ -22,8 +22,16 @@ import {
   AlertCircle
 } from 'lucide-react';
 import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
+import { DataService } from '@/lib/data-service';
+import { IdentitasMasjid } from '@/types';
 
 export default function UnduhApkPage() {
+  const [identitas, setIdentitas] = useState<IdentitasMasjid | null>(null);
+  React.useEffect(() => {
+    DataService.getIdentitas().then((d) => {
+      if (d) setIdentitas(d);
+    });
+  }, []);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [copied, setCopied] = useState(false);
 
@@ -34,8 +42,8 @@ export default function UnduhApkPage() {
     if (typeof window !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
-          title: 'Aplikasi Android Masjid Al-Mukhlisin',
-          text: 'Unduh aplikasi resmi Masjid Al-Mukhlisin untuk jadwal shalat, transparansi kas, dan layanan jamaah.',
+          title: `Aplikasi Android Masjid ${identitas?.nama || 'Al-Mukhlisin'}`,
+          text: `Unduh aplikasi resmi Masjid ${identitas?.nama || 'Al-Mukhlisin'} untuk jadwal shalat, transparansi kas, dan layanan jamaah.`,
           url: window.location.href,
         });
       } catch {
@@ -55,7 +63,7 @@ export default function UnduhApkPage() {
     },
     {
       q: 'Apakah aplikasi ini aman dari virus atau malware?',
-      a: '100% Aman. Aplikasi ini dikembangkan secara resmi oleh DKM Masjid Al-Mukhlisin menggunakan kode sumber terbuka (open-source) yang dapat diaudit langsung di GitHub repository resmi masjid.',
+      a: `100% Aman. Aplikasi ini dikembangkan secara resmi oleh DKM Masjid ${identitas?.nama || 'Al-Mukhlisin'} menggunakan kode sumber terbuka (open-source) yang dapat diaudit langsung di GitHub repository resmi masjid.`,
     },
     {
       q: 'Berapa versi Android minimum yang didukung?',
@@ -82,7 +90,7 @@ export default function UnduhApkPage() {
 
           <div className="flex items-center gap-2">
             <span className="font-serif-elegant font-bold text-lg text-emerald-100 hidden sm:inline">
-              Masjid Al-Mukhlisin
+              Masjid {identitas?.nama || 'Al-Mukhlisin'}
             </span>
           </div>
 
@@ -105,7 +113,7 @@ export default function UnduhApkPage() {
 
           <div className="relative mx-auto max-w-5xl text-center">
             <h1 className="font-serif-elegant text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white mb-4">
-              Masjid Al-Mukhlisin <br />
+              Masjid {identitas?.nama || 'Al-Mukhlisin'} <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-200">
                 Dalam Genggaman Jamaah
               </span>
@@ -122,7 +130,7 @@ export default function UnduhApkPage() {
                 <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-[#0a1f18] border-2 border-emerald-400/50 p-2.5 shadow-xl shrink-0 flex items-center justify-center">
                   <img
                     src="/icon.svg"
-                    alt="Logo Masjid Al-Mukhlisin"
+                    alt={`Logo Masjid ${identitas?.nama || 'Al-Mukhlisin'}`}
                     className="w-full h-full object-contain"
                   />
                 </div>
@@ -130,7 +138,7 @@ export default function UnduhApkPage() {
                 {/* App Specs */}
                 <div className="flex-1 text-center sm:text-left">
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
-                    <h2 className="text-xl font-bold text-white">Al-Mukhlisin Mobile</h2>
+                    <h2 className="text-xl font-bold text-white">{identitas?.nama || 'Al-Mukhlisin'} Mobile</h2>
                     <span className="bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold">
                       v1.0.0
                     </span>
@@ -345,7 +353,7 @@ export default function UnduhApkPage() {
                   </h5>
                 </div>
                 <p className="text-[10px] sm:text-xs text-slate-600 leading-snug">
-                  Aplikasi Masjid Al-Mukhlisin siap dibuka di ponsel Anda.
+                  Aplikasi Masjid {identitas?.nama || 'Al-Mukhlisin'} siap dibuka di ponsel Anda.
                 </p>
               </div>
             </div>
@@ -398,7 +406,7 @@ export default function UnduhApkPage() {
 
       {/* --- FOOTER KECIL --- */}
       <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
-        <p>&copy; {new Date().getFullYear()} DKM Masjid Al-Mukhlisin Lagadar. Hak Cipta Dilindungi.</p>
+        <p>&copy; {new Date().getFullYear()} DKM Masjid {identitas?.nama || 'Al-Mukhlisin'}. Hak Cipta Dilindungi.</p>
       </footer>
 
       {/* Mobile Bottom Navigation */}

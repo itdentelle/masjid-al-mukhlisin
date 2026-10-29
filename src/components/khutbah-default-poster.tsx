@@ -11,6 +11,7 @@ export interface KhutbahDefaultPosterProps {
   waktu?: string | null;
   variant?: 'thumbnail' | 'preview' | 'card' | 'banner';
   className?: string;
+  namaMasjid?: string;
 }
 
 export function isCustomPosterImage(image?: string | null): boolean {
@@ -72,17 +73,32 @@ export default function KhutbahDefaultPoster({
   waktu,
   variant = 'card',
   className = '',
+  namaMasjid,
 }: KhutbahDefaultPosterProps) {
+  const [dynamicNama, setDynamicNama] = React.useState<string>(namaMasjid || 'Al-Mukhlisin');
+  React.useEffect(() => {
+    if (namaMasjid) {
+      setDynamicNama(namaMasjid);
+    } else if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('masjid_identitas_data');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.nama) setDynamicNama(parsed.nama);
+        }
+      } catch {}
+    }
+  }, [namaMasjid]);
   // Thumbnail for Table List (compact square)
   if (variant === 'thumbnail') {
     return (
       <div
         className={`relative h-full w-full overflow-hidden rounded-xl bg-gradient-to-br from-[#064e3b] via-[#043326] to-[#021f17] flex flex-col items-center justify-center p-1 border border-emerald-500/30 text-white shadow-inner select-none ${className}`}
-        title="Poster Standar Masjid Al-Mukhlisin"
+        title={`Poster Standar Masjid ${dynamicNama}`}
       >
         <MosqueDomeIcon className="w-6 h-6 text-emerald-300 drop-shadow" />
         <span className="text-[7px] font-black uppercase tracking-wider text-emerald-200 mt-0.5 text-center leading-none">
-          Al-Mukhlisin
+          {dynamicNama}
         </span>
       </div>
     );
@@ -113,7 +129,7 @@ export default function KhutbahDefaultPoster({
             <MosqueDomeIcon className="w-5 h-5 text-amber-300" />
             <div>
               <p className="text-[10px] font-black tracking-widest text-emerald-300 uppercase leading-none">
-                Masjid Al-Mukhlisin
+                Masjid {dynamicNama}
               </p>
               <p className="text-[8px] font-mono text-emerald-100/60 leading-tight">
                 Lagadar, Margaasih
@@ -154,7 +170,7 @@ export default function KhutbahDefaultPoster({
           </div>
           <div className="flex items-center gap-1 text-[8px] text-emerald-300/90">
             <MapPin size={9} className="text-emerald-400" />
-            <span>Masjid Al-Mukhlisin</span>
+            <span>Masjid {dynamicNama}</span>
           </div>
         </div>
       </div>
@@ -191,7 +207,7 @@ export default function KhutbahDefaultPoster({
             </div>
             <div>
               <h5 className="text-[11px] font-black uppercase tracking-widest text-emerald-300 leading-none">
-                Masjid Al-Mukhlisin
+                Masjid {dynamicNama}
               </h5>
               <p className="text-[9px] text-emerald-100/70 mt-0.5">
                 Kp. Jalan Cagak, Lagadar
@@ -235,7 +251,7 @@ export default function KhutbahDefaultPoster({
           </div>
           <div className="flex items-center gap-1 text-[9px] text-emerald-300">
             <MapPin size={11} className="text-emerald-400" />
-            <span>Masjid Al-Mukhlisin Lagadar</span>
+            <span>Masjid {dynamicNama}</span>
           </div>
         </div>
       </div>
@@ -269,7 +285,7 @@ export default function KhutbahDefaultPoster({
           <MosqueDomeIcon className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 shrink-0" />
           <div>
             <p className="text-[9px] sm:text-[10px] font-black tracking-widest text-emerald-300 uppercase leading-none">
-              Masjid Al-Mukhlisin
+              Masjid {dynamicNama}
             </p>
             <p className="text-[7px] sm:text-[8px] font-mono text-emerald-100/60 leading-tight mt-0.5">
               Lagadar, Margaasih
@@ -310,7 +326,7 @@ export default function KhutbahDefaultPoster({
         </div>
         <div className="flex items-center gap-1 text-[7px] sm:text-[8px] text-emerald-300/90 whitespace-nowrap">
           <MapPin size={8} className="text-emerald-400 shrink-0" />
-          <span>Masjid Al-Mukhlisin</span>
+          <span>Masjid {dynamicNama}</span>
         </div>
       </div>
     </div>

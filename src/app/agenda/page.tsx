@@ -201,7 +201,7 @@ export default function AgendaPublicPage() {
       <section className="relative overflow-hidden bg-gradient-to-b from-[#0a1f18] via-[#0d2a21] to-[#081a14] pt-10 pb-10 sm:pb-12 px-4 sm:px-6 md:px-8 text-white">
         <div className="mx-auto max-w-7xl">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-900/60 px-3.5 py-1 text-[10px] font-black tracking-widest text-emerald-300 uppercase">
-            <span>JADWAL SHALAT & MAJELIS ILMU · MASJID AL-MUKHLISIN</span>
+            <span>JADWAL SHALAT & MAJELIS ILMU · MASJID {(identitas?.nama || 'Al-Mukhlisin').toUpperCase()}</span>
           </div>
           <h1 className="font-serif-elegant text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white">
             Agenda & Kajian Masjid
@@ -336,7 +336,7 @@ export default function AgendaPublicPage() {
             <div>
               <h2 className="font-bold text-lg sm:text-xl text-slate-800">Jadwal Kajian & Khutbah</h2>
               <p className="text-xs text-slate-500">
-                Daftar kajian rutin tematik dan jadwal khutbah Jumat Masjid Al-Mukhlisin
+                Daftar kajian rutin tematik dan jadwal khutbah Jumat Masjid {identitas?.nama || 'Al-Mukhlisin'}
               </p>
             </div>
 
@@ -475,7 +475,7 @@ export default function AgendaPublicPage() {
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
                       <span className="flex items-center gap-1">
                         <MapPin size={12} className="text-slate-400" />
-                        <span>Masjid Al-Mukhlisin</span>
+                        <span>Masjid {identitas?.nama || 'Al-Mukhlisin'}</span>
                       </span>
                       <span className="font-bold text-emerald-700 group-hover:underline">Lihat Rincian</span>
                     </div>
@@ -563,7 +563,7 @@ export default function AgendaPublicPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Tempat</span>
                   <span className="font-bold text-slate-800">
-                    Ruang Utama Masjid Al-Mukhlisin Lagadar
+                    Ruang Utama Masjid {identitas?.nama || 'Al-Mukhlisin'}
                   </span>
                 </div>
               </div>

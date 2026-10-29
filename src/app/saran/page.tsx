@@ -490,7 +490,7 @@ export default function SaranKritikPublicPage() {
                       </p>
 
                       <div className="flex items-center justify-between pt-1 text-[11px] text-emerald-700 font-semibold">
-                        <span>Oleh: {item.ditanggapi_oleh || 'Pengurus DKM Al-Mukhlisin'}</span>
+                        <span>Oleh: {item.ditanggapi_oleh || `Pengurus DKM ${identitas?.nama || 'Al-Mukhlisin'}`}</span>
                         {item.ditanggapi_pada && (
                           <span className="text-[10px] opacity-75 font-normal">
                             {new Date(item.ditanggapi_pada).toLocaleDateString('id-ID', {
@@ -513,7 +513,7 @@ export default function SaranKritikPublicPage() {
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 text-[10px] text-slate-400 flex items-center justify-between">
-                  <span>Masjid Al-Mukhlisin &bull; Saran #{item.id}</span>
+                  <span>Masjid {identitas?.nama || 'Al-Mukhlisin'} &bull; Saran #{item.id}</span>
                   <span className="flex items-center gap-1 text-emerald-600 font-bold">
                     <Heart size={10} className="fill-emerald-500 text-emerald-500" />
                     Kemakmuran Masjid
@@ -558,7 +558,7 @@ export default function SaranKritikPublicPage() {
                 </div>
                 <h4 className="font-bold text-emerald-950 text-base">Jazakallahu Khairan!</h4>
                 <p className="text-xs text-emerald-800 leading-relaxed max-w-sm mx-auto">
-                  Alhamdulillah, aspirasi dan saran Anda telah tersimpan dan akan segera ditinjau oleh Pengurus DKM Al-Mukhlisin.
+                  Alhamdulillah, aspirasi dan saran Anda telah tersimpan dan akan segera ditinjau oleh Pengurus DKM {identitas?.nama || 'Al-Mukhlisin'}.
                 </p>
               </div>
             ) : (

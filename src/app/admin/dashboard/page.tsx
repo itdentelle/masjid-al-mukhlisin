@@ -16,9 +16,10 @@ import {
 import AdminLayout from '@/components/layout/admin-layout';
 import { DataService } from '@/lib/data-service';
 import { getHijriDateString } from '@/lib/hijri';
-import { KasItem, InventoryItem, KhutbahItem } from '@/types';
+import { KasItem, InventoryItem, KhutbahItem, IdentitasMasjid } from '@/types';
 
 export default function DashboardPage() {
+  const [identitas, setIdentitas] = useState<IdentitasMasjid | null>(null);
   const [saldo, setSaldo] = useState<number>(0);
   const [totalAset, setTotalAset] = useState<number>(0);
   const [jadwalTerdekat, setJadwalTerdekat] = useState<KhutbahItem | null>(null);
@@ -31,11 +32,13 @@ export default function DashboardPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [kasList, invList, khuList] = await Promise.all([
+      const [kasList, invList, khuList, identitasData] = await Promise.all([
         DataService.getKas(),
         DataService.getInventories(),
         DataService.getKhutbahs(),
+        DataService.getIdentitas(),
       ]);
+      if (identitasData) setIdentitas(identitasData);
 
       // 1. Finance calculations
       const total = kasList.reduce((acc, curr) => {
@@ -86,7 +89,7 @@ export default function DashboardPage() {
             </h2>
             <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 mt-1">
               <p className="text-[11px] sm:text-sm font-bold text-slate-400">
-                Ringkasan Sistem Manajemen Masjid Al-Mukhlisin
+                Ringkasan Sistem Manajemen Masjid {identitas?.nama || 'Al-Mukhlisin'}
               </p>
               {todayDateStr && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[10px] sm:text-xs font-bold border border-emerald-200/80 shadow-2xs w-fit">

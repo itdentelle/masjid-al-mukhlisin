@@ -21,7 +21,7 @@ import {
 import AdminLayout from '@/components/layout/admin-layout';
 import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 import { DataService } from '@/lib/data-service';
-import { KasItem, TipeKas, KategoriItem } from '@/types';
+import { KasItem, TipeKas, KategoriItem, IdentitasMasjid } from '@/types';
 
 const KETERANGAN_OPTIONS = [
   'Infaq Jumat',
@@ -35,6 +35,7 @@ const KETERANGAN_OPTIONS = [
 ];
 
 export default function FinancePage() {
+  const [identitas, setIdentitas] = useState<IdentitasMasjid | null>(null);
   const [dataKas, setDataKas] = useState<KasItem[]>([]);
   const [kategoriKas, setKategoriKas] = useState<KategoriItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,10 +67,12 @@ export default function FinancePage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [items, categories] = await Promise.all([
+      const [items, categories, identitasData] = await Promise.all([
         DataService.getKas(),
         DataService.getKategori('kas'),
+        DataService.getIdentitas(),
       ]);
+      if (identitasData) setIdentitas(identitasData);
       setDataKas(items);
       const activeCats = categories.filter((k) => k.is_active !== false);
       if (activeCats.length > 0) {
@@ -283,7 +286,7 @@ export default function FinancePage() {
       <div className="p-3.5 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-4 sm:space-y-6 pb-24">
         {/* Print-Only Title Header */}
         <div className="hidden print-only-title">
-          LAPORAN MUTASI KEUANGAN KAS MASJID AL-MUKHLISIN
+          LAPORAN MUTASI KEUANGAN KAS MASJID {(identitas?.nama || 'Al-Mukhlisin').toUpperCase()}
           <p className="text-xs font-normal mt-1">Dicetak pada: {currentDateStr || '-'}</p>
         </div>
 
