@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
+import { exportExcelFile } from '@/lib/excel-export';
 import {
   Package,
   Plus,
@@ -154,17 +155,47 @@ export default function InventoryPage() {
     selectedIds.length > 0 ? dataAset.filter((i) => selectedIds.includes(i.id)) : filteredAset;
 
   const exportToExcel = () => {
-    const prepare = getTargetData().map((i) => ({
-      'Nama Barang': i.nama_barang,
-      Jumlah: i.jumlah,
-      Kondisi: i.kondisi.toUpperCase(),
-      Lokasi: i.lokasi,
-      'Tanggal Input': i.created_at ? new Date(i.created_at).toLocaleDateString('id-ID') : '-',
-    }));
-    const ws = XLSX.utils.json_to_sheet(prepare);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Inventaris');
-    XLSX.writeFile(wb, `Inventaris_Masjid_${new Date().toISOString().split('T')[0]}.xlsx`);
+    const safeNama = (identitas?.nama || 'Al-Mukhlisin').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const dateStr = new Date().toISOString().split('T')[0];
+
+    if (activeTab === 'inventaris') {
+      const target = getTargetData();
+      if (target.length === 0) {
+        alert('Tidak ada data inventaris untuk diekspor');
+        return;
+      }
+      const prepare = target.map((i, idx) => ({
+        No: idx + 1,
+        'Nama Barang': i.nama_barang,
+        Jumlah: Number(i.jumlah) || 0,
+        Kondisi: i.kondisi.toUpperCase(),
+        Lokasi: i.lokasi,
+        'Tanggal Input': i.created_at ? new Date(i.created_at).toLocaleDateString('id-ID') : '-',
+      }));
+      const ws = XLSX.utils.json_to_sheet(prepare);
+      ws['!cols'] = [{ wch: 6 }, { wch: 25 }, { wch: 10 }, { wch: 12 }, { wch: 20 }, { wch: 16 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Inventaris');
+      exportExcelFile(wb, `Inventaris_${safeNama}_${dateStr}.xlsx`);
+    } else {
+      if (dataWakaf.length === 0) {
+        alert('Tidak ada data wakaf untuk diekspor');
+        return;
+      }
+      const prepare = dataWakaf.map((w, idx) => ({
+        No: idx + 1,
+        Tanggal: w.tanggal,
+        'Nama Wakif': w.wakif,
+        'Jenis Wakaf': w.jenis,
+        'Nilai Estimasi (Rp)': Number(w.nilai) || 0,
+        Keterangan: w.keterangan || '-',
+      }));
+      const ws = XLSX.utils.json_to_sheet(prepare);
+      ws['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 25 }, { wch: 16 }, { wch: 18 }, { wch: 30 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Data Wakaf');
+      exportExcelFile(wb, `Wakaf_${safeNama}_${dateStr}.xlsx`);
+    }
   };
 
   const copyTable = () => {
@@ -295,9 +326,17 @@ export default function InventoryPage() {
                 </button>
               </>
             ) : (
-              <button onClick={() => { setShowWakafModal('add'); }} className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-[#0d8a5e] text-white hover:bg-emerald-700 text-xs font-black tracking-wider uppercase transition-all shadow-md shadow-emerald-900/10 active:scale-95">
-                <Plus size={16} /> <span>Catat Wakaf</span>
-              </button>
+              <>
+                <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:border-emerald-600 hover:text-emerald-700 transition-colors shadow-xs" title="Ekspor ke Excel">
+                  <Download size={14} /> <span className="hidden sm:inline">Excel</span>
+                </button>
+                <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:border-emerald-600 transition-colors shadow-xs" title="Cetak Laporan">
+                  <Printer size={14} /> <span className="hidden sm:inline">Cetak</span>
+                </button>
+                <button onClick={() => { setShowWakafModal('add'); }} className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-[#0d8a5e] text-white hover:bg-emerald-700 text-xs font-black tracking-wider uppercase transition-all shadow-md shadow-emerald-900/10 active:scale-95">
+                  <Plus size={16} /> <span>Catat Wakaf</span>
+                </button>
+              </>
             )}
           </div>
         </div>

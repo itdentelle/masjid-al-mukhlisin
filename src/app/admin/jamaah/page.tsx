@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
+import { exportExcelFile } from '@/lib/excel-export';
 import {
   Users,
   Plus,
@@ -193,7 +194,12 @@ export default function JamaahPage() {
     selectedIds.length > 0 ? dataJamaah.filter((i) => selectedIds.includes(i.id)) : filteredJamaah;
 
   const exportToExcel = () => {
-    const prepare = getTargetData().map((i, idx) => ({
+    const target = getTargetData();
+    if (target.length === 0) {
+      alert('Tidak ada data jamaah untuk diekspor');
+      return;
+    }
+    const prepare = target.map((i, idx) => ({
       No: idx + 1,
       'Nama Lengkap': i.nama,
       'No. WhatsApp/HP': i.no_hp || '-',
@@ -202,9 +208,11 @@ export default function JamaahPage() {
       'Terdaftar Sejak': i.created_at ? new Date(i.created_at).toLocaleDateString('id-ID') : '-',
     }));
     const ws = XLSX.utils.json_to_sheet(prepare);
+    ws['!cols'] = [{ wch: 6 }, { wch: 25 }, { wch: 18 }, { wch: 30 }, { wch: 18 }, { wch: 16 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Data Jamaah');
-    XLSX.writeFile(wb, `Data_Jamaah_Al_Mukhlisin_${new Date().toISOString().split('T')[0]}.xlsx`);
+    const safeNama = (identitas?.nama || 'Al-Mukhlisin').replace(/[^a-zA-Z0-9_-]/g, '_');
+    exportExcelFile(wb, `Data_Jamaah_${safeNama}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const printTable = () => {

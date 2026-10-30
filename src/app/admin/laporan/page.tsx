@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
+import { exportExcelFile } from '@/lib/excel-export';
 import {
   FileText,
   Printer,
@@ -279,9 +280,10 @@ export default function LaporanPage() {
     }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pjData), 'Petugas_Jumat');
 
-    XLSX.writeFile(
+    const safeNama = (identitas.nama || 'Al-Mukhlisin').replace(/[^a-zA-Z0-9_-]/g, '_');
+    exportExcelFile(
       wb,
-      `Laporan_Lengkap_Masjid_Al_Mukhlisin_${new Date().toISOString().split('T')[0]}.xlsx`
+      `Laporan_Lengkap_${safeNama}_${new Date().toISOString().split('T')[0]}.xlsx`
     );
   };
 

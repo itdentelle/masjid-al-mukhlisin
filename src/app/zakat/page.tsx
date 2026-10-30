@@ -20,6 +20,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { exportExcelFile } from '@/lib/excel-export';
 import { getHijriDateString } from '@/lib/hijri';
 import { DataService } from '@/lib/data-service';
 import { ZakatQurbanItem, IdentitasMasjid } from '@/types';
@@ -113,22 +114,38 @@ export default function ZakatPublicPage() {
 
   // Export to Excel
   const handleExportExcel = () => {
+    if (filteredData.length === 0) {
+      alert('Tidak ada data ZIS untuk diekspor');
+      return;
+    }
+
     const exportData = filteredData.map((item, index) => ({
       No: index + 1,
       Tanggal: item.tanggal,
       Muzakki: item.nama,
       'Jenis ZIS': item.jenis,
-      'Jumlah Jiwa': item.jumlah_jiwa,
-      'Beras (kg)': item.beras_kg,
-      Nominal: item.nominal,
+      'Jumlah Jiwa': Number(item.jumlah_jiwa) || 0,
+      'Beras (kg)': Number(item.beras_kg) || 0,
+      'Nominal (Rp)': Number(item.nominal) || 0,
       Keterangan: item.keterangan || '-',
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
+    ws['!cols'] = [
+      { wch: 6 },
+      { wch: 14 },
+      { wch: 25 },
+      { wch: 22 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 18 },
+      { wch: 25 },
+    ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Transparansi ZIS');
     const dateStr = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(wb, `Laporan_ZIS_Al_Mukhlisin_${dateStr}.xlsx`);
+    const safeNama = (identitas?.nama || 'Al-Mukhlisin').replace(/[^a-zA-Z0-9_-]/g, '_');
+    exportExcelFile(wb, `Laporan_ZIS_${safeNama}_${dateStr}.xlsx`);
   };
 
   return (

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
+import { exportExcelFile } from '@/lib/excel-export';
 import {
   UserCheck,
   Plus,
@@ -272,7 +273,12 @@ export default function PetugasJumatPage() {
     selectedIds.length > 0 ? dataPetugas.filter((i) => selectedIds.includes(i.id)) : filteredPetugas;
 
   const exportToExcel = () => {
-    const prepare = getTargetData().map((i, idx) => ({
+    const target = getTargetData();
+    if (target.length === 0) {
+      alert('Tidak ada data jadwal petugas untuk diekspor');
+      return;
+    }
+    const prepare = target.map((i, idx) => ({
       No: idx + 1,
       Tanggal: i.tanggal,
       Khatib: i.khatib,
@@ -280,9 +286,11 @@ export default function PetugasJumatPage() {
       Muadzin: i.muadzin,
     }));
     const ws = XLSX.utils.json_to_sheet(prepare);
+    ws['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Petugas Jumat');
-    XLSX.writeFile(wb, `Jadwal_Petugas_Jumat_Al_Mukhlisin_${new Date().toISOString().split('T')[0]}.xlsx`);
+    const safeNama = (identitas?.nama || 'Al-Mukhlisin').replace(/[^a-zA-Z0-9_-]/g, '_');
+    exportExcelFile(wb, `Jadwal_Petugas_Jumat_${safeNama}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const printTable = () => {

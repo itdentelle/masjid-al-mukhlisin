@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import * as XLSX from 'xlsx';
+import { exportExcelFile } from '@/lib/excel-export';
 import {
   Wallet,
   Plus,
@@ -269,6 +271,50 @@ export default function FinancePage() {
     window.print();
   };
 
+  const exportToExcel = () => {
+    const target =
+      selectedIds.length > 0 ? dataKas.filter((i) => selectedIds.includes(i.id)) : filteredData;
+    if (target.length === 0) {
+      alert('Tidak ada data transaksi kas untuk diekspor');
+      return;
+    }
+
+    const sorted = [...target].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+    let runningBalance = 0;
+    const prepare = sorted.map((k, idx) => {
+      const nominal = Number(k.nominal) || 0;
+      if (k.tipe === 'masuk') {
+        runningBalance += nominal;
+      } else {
+        runningBalance -= nominal;
+      }
+      return {
+        No: idx + 1,
+        Tanggal: k.tanggal,
+        Keterangan: k.keterangan,
+        Kategori: k.kategori || '-',
+        Tipe: k.tipe === 'masuk' ? 'PEMASUKAN' : 'PENGELUARAN',
+        'Nominal (Rp)': nominal,
+        'Saldo Berjalan (Rp)': runningBalance,
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(prepare);
+    ws['!cols'] = [
+      { wch: 6 },
+      { wch: 14 },
+      { wch: 32 },
+      { wch: 18 },
+      { wch: 16 },
+      { wch: 18 },
+      { wch: 20 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Buku Kas');
+    const safeNama = (identitas?.nama || 'Al-Mukhlisin').replace(/[^a-zA-Z0-9_-]/g, '_');
+    exportExcelFile(wb, `Buku_Kas_${safeNama}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
       setSelectedIds(filteredData.map((i) => i.id));
@@ -299,6 +345,13 @@ export default function FinancePage() {
             </p>
           </div>
           <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+            <button
+              onClick={exportToExcel}
+              className="flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:border-emerald-600 hover:text-emerald-700 transition-colors shadow-xs"
+              title="Ekspor ke Excel"
+            >
+              <Download size={16} /> <span className="hidden sm:inline">Ekspor Excel</span>
+            </button>
             <button
               onClick={handlePrint}
               className="flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:border-emerald-600 transition-colors shadow-xs"

@@ -67,6 +67,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadData();
+    window.addEventListener('masjid_refresh_requested', loadData);
+
     const now = new Date();
     const masehi = now.toLocaleDateString('id-ID', {
       weekday: 'long',
@@ -76,6 +78,10 @@ export default function DashboardPage() {
     });
     const hijri = getHijriDateString(now);
     setTodayDateStr(hijri ? `${masehi} · ${hijri}` : masehi);
+
+    return () => {
+      window.removeEventListener('masjid_refresh_requested', loadData);
+    };
   }, []);
 
   return (

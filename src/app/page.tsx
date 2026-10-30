@@ -36,9 +36,11 @@ import {
   Info,
   UserCheck,
   Smartphone,
+  QrCode,
 } from 'lucide-react';
 import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
 import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
+import QrisDonationModal from '@/components/qris-donation-modal';
 
 const IconInstagram = ({ size = 18 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -144,6 +146,7 @@ export default function HomePage() {
   const [hijriDateString, setHijriDateString] = useState('');
   const [currentYear, setCurrentYear] = useState<number>(2026);
   const [identitas, setIdentitas] = useState<IdentitasMasjid | null>(null);
+  const [showQrisModal, setShowQrisModal] = useState(false);
 
   // Live Clock & Real-time Prayer Tracker
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
@@ -428,9 +431,15 @@ export default function HomePage() {
       });
     };
 
+    const handleGlobalRefresh = () => {
+      fetchInternalData();
+      fetchShalat();
+    };
+
     window.addEventListener('masjid_identitas_updated', handleIdentitasUpdated);
     window.addEventListener('masjid_saran_updated', handleSaranUpdated);
     window.addEventListener('masjid_kategori_updated', handleKategoriUpdated);
+    window.addEventListener('masjid_refresh_requested', handleGlobalRefresh);
 
     const fetchShalat = async () => {
       try {
@@ -450,6 +459,7 @@ export default function HomePage() {
       window.removeEventListener('masjid_identitas_updated', handleIdentitasUpdated);
       window.removeEventListener('masjid_saran_updated', handleSaranUpdated);
       window.removeEventListener('masjid_kategori_updated', handleKategoriUpdated);
+      window.removeEventListener('masjid_refresh_requested', handleGlobalRefresh);
     };
   }, []);
 
@@ -662,6 +672,14 @@ export default function HomePage() {
               >
                 <span>Majelis Ilmu</span>
               </a>
+              <button
+                type="button"
+                onClick={() => setShowQrisModal(true)}
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm px-5 py-3 shadow-lg shadow-emerald-950/40 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <QrCode size={15} />
+                <span>Infaq QRIS</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1501,6 +1519,91 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* --- INFAQ & DONASI DIGITAL (QRIS) --- */}
+        <section id="donasi" className="scroll-mt-32">
+          <div className="relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/30 to-teal-50/40 p-5 sm:p-8 md:p-12 shadow-xl shadow-emerald-900/5">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-12">
+              <div className="space-y-4 max-w-xl text-center lg:text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">
+                  <QrCode size={13} className="text-emerald-700" />
+                  <span>Donasi Digital Berkah & Praktis</span>
+                </div>
+                <h2 className="font-serif-elegant text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                  Salurkan Infaq & Sedekah Terbaik via <span className="text-emerald-700">QRIS</span>
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  Kini jamaah dapat menyalurkan donasi infaq pemakmuran masjid dengan mudah kapan saja dan di mana saja menggunakan aplikasi m-Banking atau e-Wallet apa saja.
+                </p>
+
+                {identitas?.rekening_bank && (
+                  <div className="inline-block p-3 rounded-2xl bg-white border border-slate-200 text-xs font-mono text-slate-700 shadow-2xs">
+                    <p className="text-[10px] font-sans font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                      Rekening Transfer Manual:
+                    </p>
+                    <span className="font-bold text-slate-900">{identitas.rekening_bank}</span>
+                  </div>
+                )}
+
+                <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowQrisModal(true)}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm px-6 py-3 shadow-lg shadow-emerald-900/15 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                  >
+                    <QrCode size={16} />
+                    <span>Lihat & Pindai Barcode QRIS</span>
+                  </button>
+                  <Link
+                    href="/keuangan"
+                    className="inline-flex items-center gap-1.5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-600 text-slate-700 hover:text-emerald-700 font-bold text-xs sm:text-sm px-5 py-3 transition shadow-xs"
+                  >
+                    <span>Laporan Mutasi Kas</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                </div>
+              </div>
+
+              {/* QRIS Card Thumbnail / Direct Display */}
+              <div className="shrink-0 w-full sm:w-auto flex justify-center">
+                <div
+                  onClick={() => setShowQrisModal(true)}
+                  className="group relative cursor-pointer bg-white rounded-3xl p-5 border-2 border-emerald-500/30 shadow-xl transition-all duration-300 hover:shadow-2xl hover:border-emerald-500 hover:-translate-y-1 max-w-[280px] w-full text-center"
+                >
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 text-[10px] font-black text-rose-600 tracking-wider">
+                    <span>QRIS</span>
+                    <span className="text-[9px] text-slate-400 font-sans font-normal">Standard Nasional</span>
+                  </div>
+
+                  <div className="w-full aspect-square bg-slate-50 rounded-2xl overflow-hidden flex items-center justify-center p-2 border border-slate-100 relative">
+                    {identitas?.qris_url ? (
+                      <img
+                        src={identitas.qris_url}
+                        alt={`QRIS Masjid ${identitas.nama || ''}`}
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="p-4 text-center text-slate-400 space-y-2">
+                        <QrCode size={56} className="mx-auto text-slate-300" />
+                        <p className="text-[11px] font-medium text-slate-500">Klik untuk melihat info donasi</p>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-emerald-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold rounded-2xl transition-opacity backdrop-blur-2xs">
+                      Perbesar & Pindai 🔍
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] font-bold text-slate-800 mt-3 truncate">
+                    DKM Masjid {identitas?.nama || 'Al-Mukhlisin'}
+                  </p>
+                  <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                    Klik untuk memperbesar / simpan
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* --- 5. KOTAK SARAN & ASPIRASI JAMAAH --- */}
         <section id="saran" className="scroll-mt-40 md:scroll-mt-48">
           <div data-theme="dark" className="rounded-[2.5rem] md:rounded-[3rem] bg-gradient-to-br from-[#0a1f18] via-[#0f2e24] to-[#164436] p-6 sm:p-10 md:p-14 text-white shadow-2xl border border-emerald-900/60 relative overflow-hidden">
@@ -1825,6 +1928,13 @@ export default function HomePage() {
           <span>Kotak Saran</span>
         </a>
       </div>
+
+      {/* QRIS Donation Modal */}
+      <QrisDonationModal
+        isOpen={showQrisModal}
+        onClose={() => setShowQrisModal(false)}
+        identitas={identitas}
+      />
 
       {/* Mobile Bottom Navigation Bar (7 Tabs: Beranda, Kas, Jamaah, Agenda, Zakat, Aset, Laporan) */}
       <MobileBottomNav variant="public" />

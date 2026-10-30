@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import * as XLSX from 'xlsx';
+import { exportExcelFile } from '@/lib/excel-export';
 import {
   Tags,
   Plus,
@@ -22,6 +24,7 @@ import {
   ArrowUpDown,
   Filter,
   Mic,
+  Download,
 } from 'lucide-react';
 import AdminLayout from '@/components/layout/admin-layout';
 import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
@@ -291,6 +294,35 @@ export default function MasterKategoriPage() {
     }
   };
 
+  const exportToExcel = () => {
+    if (filteredCategories.length === 0) {
+      showNotification('error', 'Tidak ada data kategori untuk diekspor');
+      return;
+    }
+    const prepare = filteredCategories.map((c, idx) => ({
+      No: idx + 1,
+      Modul: c.modul.toUpperCase(),
+      'Nama Kategori / Opsi': c.nama,
+      'Tipe (Kas)': c.tipe ? c.tipe.toUpperCase() : '-',
+      Urutan: c.urutan,
+      Status: c.is_active !== false ? 'AKTIF' : 'NONAKTIF',
+      Deskripsi: c.deskripsi || '-',
+    }));
+    const ws = XLSX.utils.json_to_sheet(prepare);
+    ws['!cols'] = [
+      { wch: 6 },
+      { wch: 14 },
+      { wch: 25 },
+      { wch: 14 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 35 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Master Kategori');
+    exportExcelFile(wb, `Master_Kategori_${activeTab}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -313,6 +345,14 @@ export default function MasterKategoriPage() {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={exportToExcel}
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2.5 bg-white border border-slate-200 text-slate-700 hover:border-emerald-600 hover:text-emerald-700 hover:bg-slate-50 text-xs font-bold rounded-xl shadow-xs transition"
+              title="Ekspor seluruh data kategori ke Excel"
+            >
+              <Download size={14} className="text-emerald-600" />
+              <span>Ekspor Excel</span>
+            </button>
             <button
               onClick={() => setShowResetConfirm(true)}
               className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold rounded-xl shadow-xs transition"

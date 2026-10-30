@@ -142,6 +142,8 @@ export interface IdentitasMasjid {
   ketua_dkm: string;
   bendahara: string;
   logo_url?: string | null;
+  qris_url?: string | null;
+  rekening_bank?: string | null;
   updated_at?: string;
 }
 

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
+import { exportExcelFile } from '@/lib/excel-export';
 import {
   HandHeart,
   Plus,
@@ -22,7 +23,7 @@ import {
 import AdminLayout from '@/components/layout/admin-layout';
 import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 import { DataService } from '@/lib/data-service';
-import { ZakatQurbanItem, JenisZakat, KategoriItem } from '@/types';
+import { ZakatQurbanItem, JenisZakat, KategoriItem, IdentitasMasjid } from '@/types';
 
 const DEFAULT_ZAKAT_CATEGORIES = [
   'Zakat Fitrah (uang)',
@@ -36,6 +37,7 @@ const DEFAULT_ZAKAT_CATEGORIES = [
 export default function ZakatPage() {
   const [dataZakat, setDataZakat] = useState<ZakatQurbanItem[]>([]);
   const [kategoriZakat, setKategoriZakat] = useState<KategoriItem[]>([]);
+  const [identitas, setIdentitas] = useState<IdentitasMasjid | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Modals
@@ -70,15 +72,17 @@ export default function ZakatPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [items, categories] = await Promise.all([
+      const [items, categories, identitasData] = await Promise.all([
         DataService.getZakatQurban(),
         DataService.getKategori('zakat'),
+        DataService.getIdentitas(),
       ]);
       setDataZakat(items);
       const activeCats = categories.filter((k) => k.is_active !== false);
       if (activeCats.length > 0) {
         setKategoriZakat(activeCats);
       }
+      if (identitasData) setIdentitas(identitasData);
     } catch (error) {
       console.error('Failed to load zakat:', error);
     } finally {
@@ -371,20 +375,36 @@ export default function ZakatPage() {
     selectedIds.length > 0 ? dataZakat.filter((i) => selectedIds.includes(i.id)) : filteredZakat;
 
   const exportToExcel = () => {
-    const prepare = getTargetData().map((i, idx) => ({
+    const target = getTargetData();
+    if (target.length === 0) {
+      alert('Tidak ada data zakat & qurban untuk diekspor');
+      return;
+    }
+    const prepare = target.map((i, idx) => ({
       No: idx + 1,
       Tanggal: i.tanggal,
       'Nama Muzakki / Penerima': i.nama,
       Jenis: i.jenis,
-      'Jumlah Jiwa': i.jumlah_jiwa || 0,
-      'Beras (Kg)': i.beras_kg || 0,
-      'Nominal Uang (Rp)': i.nominal || 0,
+      'Jumlah Jiwa': Number(i.jumlah_jiwa) || 0,
+      'Beras (Kg)': Number(i.beras_kg) || 0,
+      'Nominal Uang (Rp)': Number(i.nominal) || 0,
       Keterangan: i.keterangan || '-',
     }));
     const ws = XLSX.utils.json_to_sheet(prepare);
+    ws['!cols'] = [
+      { wch: 6 },
+      { wch: 14 },
+      { wch: 25 },
+      { wch: 22 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 18 },
+      { wch: 25 },
+    ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Zakat & Qurban');
-    XLSX.writeFile(wb, `Zakat_Qurban_Al_Mukhlisin_${new Date().toISOString().split('T')[0]}.xlsx`);
+    const safeNama = (identitas?.nama || 'Al-Mukhlisin').replace(/[^a-zA-Z0-9_-]/g, '_');
+    exportExcelFile(wb, `Zakat_Qurban_${safeNama}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const printTable = () => {

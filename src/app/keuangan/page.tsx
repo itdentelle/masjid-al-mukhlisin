@@ -15,13 +15,16 @@ import {
   Shield,
   X,
   PieChart,
+  QrCode,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { exportExcelFile } from '@/lib/excel-export';
 import { DataService } from '@/lib/data-service';
 import { getHijriDateString } from '@/lib/hijri';
 import { KasItem, IdentitasMasjid } from '@/types';
 import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
 import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
+import QrisDonationModal from '@/components/qris-donation-modal';
 
 export default function KeuanganDetailPage() {
   const [dataKas, setDataKas] = useState<KasItem[]>([]);
@@ -37,6 +40,7 @@ export default function KeuanganDetailPage() {
 
   // Modals
   const [selectedTrx, setSelectedTrx] = useState<KasItem | null>(null);
+  const [showQrisModal, setShowQrisModal] = useState(false);
 
   // Dates
   const [todayDateStr, setTodayDateStr] = useState('');
@@ -62,6 +66,8 @@ export default function KeuanganDetailPage() {
   useEffect(() => {
     loadData();
 
+    window.addEventListener('masjid_refresh_requested', loadData);
+
     const now = new Date();
     setCurrentMonthPrefix(now.toISOString().slice(0, 7));
     setTodayDateStr(
@@ -73,6 +79,10 @@ export default function KeuanganDetailPage() {
       })
     );
     setHijriDateStr(getHijriDateString(now));
+
+    return () => {
+      window.removeEventListener('masjid_refresh_requested', loadData);
+    };
   }, []);
 
   // Global Financial Statistics
@@ -245,21 +255,36 @@ export default function KeuanganDetailPage() {
 
   // Export to Excel
   const handleExportExcel = () => {
+    if (rowsWithBalance.length === 0) {
+      alert('Tidak ada data transaksi untuk diekspor');
+      return;
+    }
+
     const exportData = rowsWithBalance.map((item, idx) => ({
       No: idx + 1,
       Tanggal: item.tanggal,
       Kategori: item.kategori || '-',
       Keterangan: item.keterangan,
       Tipe: item.tipe === 'masuk' ? 'PEMASUKAN' : 'PENGELUARAN',
-      Nominal: Number(item.nominal),
-      'Saldo Berjalan': item.runningBalance,
+      'Nominal (Rp)': Number(item.nominal),
+      'Saldo Berjalan (Rp)': item.runningBalance,
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
+    ws['!cols'] = [
+      { wch: 6 },
+      { wch: 14 },
+      { wch: 18 },
+      { wch: 32 },
+      { wch: 16 },
+      { wch: 18 },
+      { wch: 20 },
+    ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Buku Kas Transparansi');
     const dateStr = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(wb, `Buku_Kas_Masjid_Al_Mukhlisin_${dateStr}.xlsx`);
+    const safeNama = (identitas?.nama || 'Al-Mukhlisin').replace(/[^a-zA-Z0-9_-]/g, '_');
+    exportExcelFile(wb, `Buku_Kas_${safeNama}_${dateStr}.xlsx`);
   };
 
   return (
@@ -529,6 +554,16 @@ export default function KeuanganDetailPage() {
             </div>
 
             <div className="flex items-center gap-2.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setShowQrisModal(true)}
+                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2.5 text-xs font-bold shadow-md shadow-emerald-950/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                title="Salurkan Infaq Digital via QRIS"
+              >
+                <QrCode size={15} />
+                <span>Infaq QRIS</span>
+              </button>
+
               <button
                 onClick={handleExportExcel}
                 className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-2xs transition-colors hover:border-emerald-600 hover:text-emerald-700"
@@ -855,6 +890,13 @@ export default function KeuanganDetailPage() {
           </div>
         </div>
       )}
+
+      {/* QRIS Donation Modal */}
+      <QrisDonationModal
+        isOpen={showQrisModal}
+        onClose={() => setShowQrisModal(false)}
+        identitas={identitas}
+      />
 
       {/* Mobile Bottom Navigation Bar (7 Tabs: Beranda, Kas, Jamaah, Agenda, Zakat, Aset, Laporan) */}
       <MobileBottomNav variant="public" />

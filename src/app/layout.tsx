@@ -18,6 +18,8 @@ export const metadata: Metadata = {
 };
 
 import AnimatedSplashScreen from '@/components/layout/animated-splash-screen';
+import PullToRefresh from '@/components/ui/pull-to-refresh';
+import InAppUpdateModal from '@/components/in-app-update-modal';
 
 export default function RootLayout({
   children,
@@ -32,6 +34,8 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-[#f8fafc] text-slate-900 antialiased selection:bg-emerald-200">
         <AnimatedSplashScreen />
+        <PullToRefresh />
+        <InAppUpdateModal />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

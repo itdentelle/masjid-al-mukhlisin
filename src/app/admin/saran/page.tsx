@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
+import { exportExcelFile } from '@/lib/excel-export';
 import {
   MessageSquareHeart,
   Search,
@@ -253,11 +254,25 @@ export default function AdminSaranPage() {
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
+    ws['!cols'] = [
+      { wch: 6 },
+      { wch: 16 },
+      { wch: 22 },
+      { wch: 16 },
+      { wch: 20 },
+      { wch: 35 },
+      { wch: 22 },
+      { wch: 35 },
+      { wch: 22 },
+      { wch: 16 },
+      { wch: 16 },
+    ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Saran & Kritik Jamaah');
-    XLSX.writeFile(
+    const safeNama = (identitas?.nama || 'Al-Mukhlisin').replace(/[^a-zA-Z0-9_-]/g, '_');
+    exportExcelFile(
       wb,
-      `Kotak_Saran_Jamaah_Al_Mukhlisin_${new Date().toISOString().slice(0, 10)}.xlsx`
+      `Kotak_Saran_Jamaah_${safeNama}_${new Date().toISOString().slice(0, 10)}.xlsx`
     );
   };
 

@@ -5,7 +5,12 @@ const path = require('path');
 const rootDir = path.join(__dirname, '..');
 const outDownloads = path.join(rootDir, 'out/downloads');
 const androidAssetsDownloads = path.join(rootDir, 'android/app/src/main/assets/public/downloads');
-const jbrPath = 'C:\\Program Files\\Android\\Android Studio\\jbr';
+const candidateJdks = [
+  'C:\\Users\\itden\\.jdks\\jbr-21.0.11',
+  'C:\\Program Files\\Android\\Android Studio\\jbr',
+];
+const jbrPath = candidateJdks.find((p) => fs.existsSync(p)) || candidateJdks[0];
+
 
 function run(cmd, cwd = rootDir) {
   console.log(`\n> ${cmd}`);

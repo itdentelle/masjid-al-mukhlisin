@@ -14,9 +14,13 @@ CREATE TABLE IF NOT EXISTS public.identitas_masjid (
     ketua_dkm TEXT DEFAULT 'Ustadz H. Ahmad Sobari',
     bendahara TEXT DEFAULT 'H. Mulyadi, S.E.',
     logo_url TEXT,
+    qris_url TEXT,
+    rekening_bank TEXT,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ALTER TABLE public.identitas_masjid ADD COLUMN IF NOT EXISTS logo_url TEXT;
+ALTER TABLE public.identitas_masjid ADD COLUMN IF NOT EXISTS qris_url TEXT;
+ALTER TABLE public.identitas_masjid ADD COLUMN IF NOT EXISTS rekening_bank TEXT;
 
 -- 2. TABEL KEUANGAN (KAS)
 CREATE TABLE IF NOT EXISTS public.kas (

@@ -16,10 +16,14 @@ import {
   Upload,
   RotateCcw,
   Image as ImageIcon,
+  QrCode,
+  Smartphone,
+  Sparkles,
 } from 'lucide-react';
 import AdminLayout from '@/components/layout/admin-layout';
 import { DataService } from '@/lib/data-service';
 import { IdentitasMasjid } from '@/types';
+import { CURRENT_APP_VERSION } from '@/lib/app-version';
 
 export default function PengaturanPage() {
   const [identitas, setIdentitas] = useState<IdentitasMasjid>({
@@ -37,6 +41,10 @@ export default function PengaturanPage() {
   // Logo upload state
   const [logoUploading, setLogoUploading] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // QRIS upload state
+  const [qrisUploading, setQrisUploading] = useState(false);
+  const qrisFileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Backup states
   const [backupJson, setBackupJson] = useState('');
@@ -90,6 +98,37 @@ export default function PengaturanPage() {
 
   const handleResetLogo = () => {
     setIdentitas((prev) => ({ ...prev, logo_url: null }));
+  };
+
+  const handleQrisFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Mohon pilih file gambar (JPG, PNG, atau WebP).');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Ukuran file foto QRIS terlalu besar (maksimal 10MB).');
+      return;
+    }
+
+    setQrisUploading(true);
+    try {
+      const uploadedUrl = await DataService.uploadQrisImage(file);
+      setIdentitas((prev) => ({ ...prev, qris_url: uploadedUrl }));
+    } catch (err: any) {
+      console.error('Gagal memproses gambar QRIS:', err);
+      alert('Gagal memproses gambar barcode QRIS. Silakan coba file lain.');
+    } finally {
+      setQrisUploading(false);
+      if (qrisFileInputRef.current) qrisFileInputRef.current.value = '';
+    }
+  };
+
+  const handleResetQris = () => {
+    setIdentitas((prev) => ({ ...prev, qris_url: null }));
   };
 
   useEffect(() => {
@@ -361,6 +400,116 @@ export default function PengaturanPage() {
                 </div>
               </div>
 
+              {/* --- QRIS & DONASI DIGITAL MASJID --- */}
+              <div className="rounded-2xl border-2 border-dashed border-emerald-500/40 bg-gradient-to-br from-emerald-50/60 to-teal-50/40 p-4 sm:p-6 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-2 rounded-xl bg-emerald-700 text-white shadow-sm">
+                      <QrCode size={18} />
+                    </span>
+                    <div>
+                      <h3 className="font-bold text-slate-800 text-sm">QRIS Donasi & Infaq Digital Masjid</h3>
+                      <p className="text-[11px] text-slate-500">
+                        Unggah barcode QRIS resmi masjid agar jamaah dapat berinfaq melalui m-banking dan e-wallet.
+                      </p>
+                    </div>
+                  </div>
+                  <span
+                    className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                      identitas.qris_url
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        : 'bg-slate-200 text-slate-600'
+                    }`}
+                  >
+                    {identitas.qris_url ? '✓ Barcode QRIS Aktif' : 'Belum Ada Barcode'}
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 pt-1">
+                  {/* QRIS Preview Box */}
+                  <div className="relative group shrink-0">
+                    <div className="w-44 h-44 sm:w-48 sm:h-48 rounded-2xl bg-white border-2 border-emerald-500/40 shadow-md p-2 flex flex-col items-center justify-center overflow-hidden transition-all duration-300 group-hover:border-emerald-500">
+                      {identitas.qris_url ? (
+                        <img
+                          src={identitas.qris_url}
+                          alt="QRIS Donasi Masjid"
+                          className="h-full w-full object-contain rounded-xl"
+                        />
+                      ) : (
+                        <div className="text-center p-3 text-slate-400 space-y-2">
+                          <QrCode size={48} className="mx-auto text-slate-300 stroke-[1.5]" />
+                          <p className="text-[11px] font-medium leading-tight">
+                            Belum ada foto barcode QRIS
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Upload Controls & Rekening Form */}
+                  <div className="space-y-3.5 flex-1 w-full">
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-slate-700">Pilih Gambar Barcode QRIS:</p>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Format yang didukung: JPG, PNG, atau WebP (maksimal 10MB). Sistem otomatis mengoptimalkan ketajaman gambar agar mudah dipindai oleh kamera HP jamaah.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <input
+                        type="file"
+                        ref={qrisFileInputRef}
+                        onChange={handleQrisFileChange}
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => qrisFileInputRef.current?.click()}
+                        disabled={qrisUploading}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-sm transition disabled:opacity-60 cursor-pointer"
+                      >
+                        {qrisUploading ? (
+                          <RefreshCw size={14} className="animate-spin" />
+                        ) : (
+                          <Upload size={14} />
+                        )}
+                        {qrisUploading ? 'Mengunggah QRIS...' : identitas.qris_url ? 'Ganti Barcode QRIS' : 'Unggah Barcode QRIS'}
+                      </button>
+
+                      {identitas.qris_url && (
+                        <button
+                          type="button"
+                          onClick={handleResetQris}
+                          className="flex items-center gap-1.5 px-3.5 py-2.5 border border-rose-200 text-rose-700 hover:bg-rose-50 rounded-xl text-xs font-bold transition cursor-pointer"
+                          title="Hapus barcode QRIS"
+                        >
+                          <Trash2 size={13} />
+                          <span>Hapus Barcode</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Nomor Rekening Pendukung / Nama Bank */}
+                    <div className="pt-2">
+                      <label className="block font-bold text-slate-700 mb-1 text-xs">
+                        Informasi Rekening Bank / Merchant QRIS (Opsional):
+                      </label>
+                      <input
+                        type="text"
+                        value={identitas.rekening_bank || ''}
+                        onChange={(e) => setIdentitas({ ...identitas, rekening_bank: e.target.value })}
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
+                        placeholder="Contoh: Bank Syariah Indonesia (BSI) 7123456789 a.n. DKM Al-Mukhlisin"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Informasi ini akan ditampilkan di bawah barcode QRIS sebagai alternatif transfer manual bagi jamaah.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="pt-2 flex items-center justify-between border-t border-slate-100">
                 <div>
                   {savedOk && (
@@ -498,7 +647,7 @@ export default function PengaturanPage() {
             <div className="flex items-center gap-3 pt-1">
               <button
                 type="submit"
-                className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center gap-2"
+                className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer"
               >
                 <Save size={14} /> Simpan Kata Sandi Baru
               </button>
@@ -509,6 +658,44 @@ export default function PengaturanPage() {
               )}
             </div>
           </form>
+        </div>
+
+        {/* ============================= */}
+        {/* SECTION 4: PEMBARUAN & VERSI APLIKASI */}
+        {/* ============================= */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm p-4 sm:p-6 md:p-8">
+          <div className="flex items-center gap-2 mb-2">
+            <Smartphone size={18} className="text-emerald-700" />
+            <h2 className="font-black text-slate-800 text-base">Pembaruan & Versi Aplikasi</h2>
+          </div>
+          <p className="text-xs text-slate-500 mb-5">
+            Sistem secara otomatis memeriksa ketersediaan pembaruan saat aplikasi dibuka di HP. Anda juga dapat memicu pemeriksaan manual kapan saja.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-800 text-sm">Al-Mukhlisin Mobile</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold border border-emerald-200">
+                  v{CURRENT_APP_VERSION.version} (Build {CURRENT_APP_VERSION.versionCode})
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Rilis: {CURRENT_APP_VERSION.releaseDate} · Didukung In-App Auto Update & Pull-to-Refresh
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('masjid_check_update_manually'));
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer"
+            >
+              <RefreshCw size={14} />
+              <span>Periksa Pembaruan Sekarang</span>
+            </button>
+          </div>
         </div>
       </div>
     </AdminLayout>

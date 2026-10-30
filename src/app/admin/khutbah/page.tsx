@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
+import { exportExcelFile } from '@/lib/excel-export';
 import {
   CalendarDays,
   Plus,
@@ -21,7 +22,7 @@ import AdminLayout from '@/components/layout/admin-layout';
 import KhutbahDefaultPoster, { isCustomPosterImage } from '@/components/khutbah-default-poster';
 import CustomDropdown, { DropdownOption } from '@/components/ui/custom-dropdown';
 import { DataService } from '@/lib/data-service';
-import { KhutbahItem, StatusKhutbah, KategoriItem, JamaahItem } from '@/types';
+import { KhutbahItem, StatusKhutbah, KategoriItem, JamaahItem, IdentitasMasjid } from '@/types';
 
 const DEFAULT_AGENDA_CATEGORIES = [
   'Shalat Jumat',
@@ -35,6 +36,7 @@ export default function KhutbahPage() {
   const [dataJadwal, setDataJadwal] = useState<KhutbahItem[]>([]);
   const [kategoriAgenda, setKategoriAgenda] = useState<KategoriItem[]>([]);
   const [dataJamaah, setDataJamaah] = useState<JamaahItem[]>([]);
+  const [identitas, setIdentitas] = useState<IdentitasMasjid | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Modals
@@ -65,10 +67,11 @@ export default function KhutbahPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [items, categories, jamaahList] = await Promise.all([
+      const [items, categories, jamaahList, identitasData] = await Promise.all([
         DataService.getKhutbahs(),
         DataService.getKategori('agenda'),
         DataService.getJamaah(),
+        DataService.getIdentitas(),
       ]);
       setDataJadwal(items);
       const activeCats = categories.filter((k) => k.is_active !== false);
@@ -76,6 +79,7 @@ export default function KhutbahPage() {
         setKategoriAgenda(activeCats);
       }
       setDataJamaah(jamaahList);
+      if (identitasData) setIdentitas(identitasData);
     } catch (error) {
       console.error('Failed to load khutbahs:', error);
     } finally {
@@ -206,8 +210,13 @@ export default function KhutbahPage() {
   const exportToExcel = () => {
     const target =
       selectedIds.length > 0 ? dataJadwal.filter((i) => selectedIds.includes(i.id)) : filteredJadwal;
+    if (target.length === 0) {
+      alert('Tidak ada data agenda khutbah untuk diekspor');
+      return;
+    }
     const ws = XLSX.utils.json_to_sheet(
-      target.map((i) => ({
+      target.map((i, idx) => ({
+        No: idx + 1,
         Tanggal: i.tanggal,
         Waktu: i.waktu ? `${i.waktu} WIB` : '-',
         Kegiatan: i.jenis_kegiatan,
@@ -216,9 +225,19 @@ export default function KhutbahPage() {
         Status: i.status.toUpperCase(),
       }))
     );
+    ws['!cols'] = [
+      { wch: 6 },
+      { wch: 14 },
+      { wch: 12 },
+      { wch: 22 },
+      { wch: 25 },
+      { wch: 30 },
+      { wch: 14 },
+    ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Jadwal Khutbah');
-    XLSX.writeFile(wb, `Jadwal_Khutbah_${new Date().toISOString().split('T')[0]}.xlsx`);
+    const safeNama = (identitas?.nama || 'Al-Mukhlisin').replace(/[^a-zA-Z0-9_-]/g, '_');
+    exportExcelFile(wb, `Jadwal_Khutbah_${safeNama}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

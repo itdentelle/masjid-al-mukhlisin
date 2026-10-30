@@ -7,7 +7,7 @@ export default function AnimatedSplashScreen() {
   const [mounted, setMounted] = useState(false);
   const [stage, setStage] = useState<'enter' | 'animate' | 'exit' | 'done'>('enter');
   const [namaMasjid, setNamaMasjid] = useState('AL-MUKHLISIN');
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -16,7 +16,7 @@ export default function AnimatedSplashScreen() {
         if (stored) {
           const parsed = JSON.parse(stored);
           if (parsed?.nama) setNamaMasjid(parsed.nama.toUpperCase());
-          if (parsed?.logo_url) setLogoUrl(parsed.logo_url);
+
         }
       } catch {}
     }
